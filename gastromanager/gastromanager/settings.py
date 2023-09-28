@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "api",
 ]
 
 MIDDLEWARE = [
@@ -84,7 +85,7 @@ DATABASES = {
         "USER": "postgres",
         "PASSWORD": os.getenv("DB_PASSWORD"),
         "HOST": "localhost",
-        "PORT": '5432',
+        "PORT": "5432",
     }
 }
 
