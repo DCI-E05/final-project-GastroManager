@@ -19,24 +19,24 @@ class InventoryItem(models.Model):
     production_date = models.DateField(blank=True)
     expiration_date = models.DateField(blank=True)
     temperature = models.IntegerField(blank=True)
-    employee = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    #employee = models.ForeignKey(on_delete=models.CASCADE)
     comment = models.TextField(blank=True)
 
     def __str__(self):
         return self.name
     
 class StockItem(models.Model):
-    SIZE_CHOICES = (
-        (0.5, '0,5 Litres')
-        (3, '3 Litres ')
+    SIZE_CHOICES = [
+        (0.5, '0.5 Litres'),
+        (3, '3 Litres '),
         (6, '6 Litres ')
-    )
+    ]
     name = models.CharField(max_length=255)
     size = models.FloatField(choices=SIZE_CHOICES)
     quantity = models.IntegerField()
     production_date = models.DateField()
     expiration_date = models.DateField()
-    employee = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    #employee = models.ForeignKey(on_delete=models.CASCADE)
     comment = models.TextField(blank=True)
 
     
