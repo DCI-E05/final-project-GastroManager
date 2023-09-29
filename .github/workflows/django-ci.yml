@@ -37,9 +37,11 @@ jobs:
     - name: Run Migrations
       run: python gastromanager/manage.py migrate
       env:
-        DATABASE_URL: postgres://user:password@localhost:5432/test_db
+        DATABASE_URL: postgres://user:password@localhost:5432/testdb
 
     - name: Run Tests
-      run: python gastromanager/manage.py test -v 2
+      run: |
+        cd gastromanager
+        python manage.py test           
       env:
-        DATABASE_URL: postgres://user:password@localhost:5432/test_db
+        DATABASE_URL: postgres://user:password@localhost:5432/testdb
