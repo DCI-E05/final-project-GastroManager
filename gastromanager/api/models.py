@@ -22,7 +22,7 @@ class InventoryItem(models.Model):
     batch_number = models.CharField(max_length=20, blank=True)
     production_date = models.DateField(blank=True)
     expiration_date = models.DateField(blank=True)
-    temperature = models.IntegerField(blank=True)
+    temperature = models.IntegerField(blank=True, null=True, default=None)
     # employee = models.ForeignKey(on_delete=models.CASCADE)
     comment = models.TextField(blank=True)
 
@@ -30,15 +30,25 @@ class InventoryItem(models.Model):
         return self.name
 
 
+class StockItemName(models.Model):
+    item_name = models.CharField(max_length=255, unique=True)
+
+    def __str__(self):
+        return self.item_name
+
+
 class StockItem(models.Model):
     SIZE_CHOICES = [(0.5, "0.5 Litres"), (3, "3 Litres "), (6, "6 Litres ")]
-    name = models.CharField(max_length=255)
+    name = models.ForeignKey(StockItemName, on_delete=models.CASCADE)
     size = models.FloatField(choices=SIZE_CHOICES)
     quantity = models.IntegerField()
     production_date = models.DateField()
     expiration_date = models.DateField()
     # employee = models.ForeignKey(on_delete=models.CASCADE)
     comment = models.TextField(blank=True)
+
+    def __str__(self):
+        return str(self.name.item_name)
 
 
 class StaffMember(models.Model):
