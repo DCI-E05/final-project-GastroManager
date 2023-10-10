@@ -46,6 +46,8 @@ INSTALLED_APPS = [
     "drf_yasg",
 ]
 
+AUTH_USER_MODEL = 'api.ManagerUser' #added for the manager model
+
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
