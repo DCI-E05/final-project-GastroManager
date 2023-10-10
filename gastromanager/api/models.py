@@ -23,6 +23,7 @@ class Address(models.Model):
 
 class StaffMember(models.Model):
     name = models.CharField(max_length=255)
+
     date_of_birth = models.DateField()
     address = models.ForeignKey(
         Address, on_delete=models.CASCADE
@@ -36,6 +37,7 @@ class StaffMember(models.Model):
         ('Production', 'Production'),
     ]
     level = models.CharField(max_length=10, choices=LEVEL_CHOICES,default='Service')
+
 
     def __str__(self):
         return self.name

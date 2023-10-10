@@ -1,4 +1,5 @@
 from django.contrib import admin
+
 from .models import (Address, StockItem,StaffMember,IceCreamProduction, IceCreamStockTakeOut, Recipe, Ingredient, IngredientIncoming,IngredientInventory, Base, BaseIngredient, IceCreamBase, RecipeIngredient,ManagerUser,  ServiceUser, ProductionUser )
 
 class IngredientIncomingAdmin(admin.ModelAdmin):

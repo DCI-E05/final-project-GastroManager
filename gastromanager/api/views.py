@@ -1,3 +1,4 @@
+
 from django.shortcuts import render, redirect,get_list_or_404, get_object_or_404
 from .models import StockItem, StaffMember, StaffMember, Recipe, Ingredient, IngredientInventory, IngredientIncoming, IceCreamProduction, StockItem, IceCreamStockTakeOut
 from .forms import RecipeForm
@@ -14,6 +15,7 @@ def staff_view(request):
 def stock_view(request):
     stock = StockItem.objects.first()
     return render(request)
+
 
 def recipe_list(request):
     recipes = Recipe.objects.all()
@@ -51,13 +53,16 @@ def delete_recipe(request, pk):
         return redirect('recipe_list')
     return render(request, 'delete_recipe.html', {'recipe': recipe})
 
+
 def ingredient(request):
     ingredient = Ingredient.objects.first()
     return render(request)
 
+
 def ingredient_inventory_view(request):
     ingredient_inventory = IngredientInventory.objects.all()
     return render(request)
+
 
 def ingredient_incoming_view(request):
     ingredient_incoming = IngredientIncoming.objects.first()
@@ -74,6 +79,7 @@ def stock_item_view(request):
 def ice_cream_stock_takeout_view(request):
     ice_cream_stock_takeout = IceCreamStockTakeOut.objects.first()
     return render(request)
+
 
 @login_required
 def add_ingredient(request):
@@ -118,4 +124,6 @@ def add_ingredient(request):
     ingredients = Ingredient.objects.all()
     return render(request, 'add_ingredient.html', {'ingredients': ingredients})
 
-# Create your views here.
+class staff_view(generics.ListCreateAPIView):
+    queryset = StaffMember.objects.all()
+    serializer_class = StaffMemberSerializer
