@@ -1,4 +1,3 @@
-
 from django.shortcuts import render, redirect,get_list_or_404, get_object_or_404
 from .models import StockItem, StaffMember, StaffMember, Recipe, Ingredient, IngredientInventory, IngredientIncoming, IceCreamProduction, StockItem, IceCreamStockTakeOut
 from .forms import RecipeForm
@@ -123,7 +122,3 @@ def add_ingredient(request):
     # List of available ingrdnts
     ingredients = Ingredient.objects.all()
     return render(request, 'add_ingredient.html', {'ingredients': ingredients})
-
-class staff_view(generics.ListCreateAPIView):
-    queryset = StaffMember.objects.all()
-    serializer_class = StaffMemberSerializer
