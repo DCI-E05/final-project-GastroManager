@@ -1,8 +1,10 @@
 from django.urls import path
+from django.views.generic import TemplateView
 
 from . import views
 
 urlpatterns = [
+    path('blank-login/', TemplateView.as_view(template_name='blank_login.html'), name='blank_login'),
     path("staff/", views.staff_view, name="staff"),
     path("stock/", views.stock_view, name="stock"),
     path("recipes/", views.RecipeListView.as_view(), name="recipe_list"),

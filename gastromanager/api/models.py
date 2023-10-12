@@ -203,23 +203,28 @@ class Ingredient(models.Model): # Model to represent an ingredient
 
     def __str__(self):
         return self.name
+    
+
+    def get_inventory(self):
+        # return the inventory of the related ingredient.
+        return IngredientInventory.objects.filter(ingredient_name=self)
 
 
 class IngredientInventory(models.Model):
-    ingredient = models.ForeignKey(Ingredient, on_delete=models.CASCADE)
+    ingredient_name = models.ForeignKey(Ingredient, on_delete=models.CASCADE)
     quantity = models.DecimalField(max_digits=10, decimal_places=2, default=None, null=True)  # Changed to DecimalField to handle decimals
 
     def __str__(self):
-        unit = self.ingredient.unit_of_measurement  # Get the unit of measurement from the related Ingredient
+        unit = self.ingredient_name.unit_of_measurement  # Get the unit of measurement from the related Ingredient
         if unit == "grams":
             # If the unit is "grams," display the quantity in grams
-            return f"{self.ingredient.name}: {self.quantity} {unit}"
+            return f"{self.ingredient_name.name}: {self.quantity} {unit}"
         elif unit == "units":
             # If the unit is "units," display the quantity in units
-            return f"{self.ingredient.name}: {int(self.quantity)} {unit}"
+            return f"{self.ingredient_name.name}: {int(self.quantity)} {unit}"
         else:
             # If the unit is neither "grams" nor "units," display only the ingredient name
-            return self.ingredient.name
+            return self.ingredient_name.name
         
     @classmethod
     def update_or_create_inventory(cls, ingredient, new_quantity):
@@ -268,12 +273,12 @@ class Recipe(models.Model):
         return self.flavor
     
 class RecipeIngredient(models.Model): # Model to represent the ingredients in a recipe
-    recipe = models.ForeignKey(Recipe, on_delete=models.CASCADE)
+    recipe_name = models.ForeignKey(Recipe, on_delete=models.CASCADE)
     ingredient = models.ForeignKey(Ingredient, on_delete=models.CASCADE)
     quantity = models.DecimalField(max_digits=10, decimal_places=2)
 
     def __str__(self):
-        return f"{self.recipe} - {self.ingredient.name}: {self.quantity}"
+        return f"{self.recipe_name} - {self.ingredient.name}: {self.quantity}"
     
 class StockItem(models.Model): # model represents IceCream in stock.
 

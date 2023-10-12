@@ -18,3 +18,14 @@ class RecipeForm(forms.ModelForm):
         widget=forms.TextInput(attrs={'placeholder': 'Enter quantities for selected ingredients'}),  # Placeholder text for input
         required=False,  # Field is not required (optional)
     )
+
+class ProductionCalculatorForm(forms.Form):
+    recipe = forms.ModelChoiceField(
+        queryset=Recipe.objects.all(),
+        label='Seleccione una receta'
+    )
+    
+    desired_quantity = forms.DecimalField(
+        label='Cantidad deseada (gramos o unidades)',
+        widget=forms.TextInput(attrs={'placeholder': 'Ingrese la cantidad deseada'}),
+    )
