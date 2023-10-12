@@ -46,7 +46,7 @@ INSTALLED_APPS = [
     "drf_yasg",
 ]
 
-AUTH_USER_MODEL = 'api.ManagerUser' #added for the manager model
+AUTH_USER_MODEL = 'api.ManagerUser' #added for autentification in the ManagerUser model.
 
 
 MIDDLEWARE = [
