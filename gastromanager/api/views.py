@@ -1,4 +1,3 @@
-
 from django.shortcuts import render, redirect, get_object_or_404
 from .models import StaffMember, Recipe, Ingredient, IngredientInventory, IngredientIncoming, RecipeIngredient, IceCreamProduction, StockItem, IceCreamStockTakeOut 
 from .forms import RecipeForm, ProductionCalculatorForm
@@ -11,6 +10,8 @@ from django.core.exceptions import ValidationError
 from django.db.models.signals import post_save
 from django.db import transaction
 from django.dispatch import receiver
+from .decorators import manager_required, service_required, production_required
+
 
 
 
@@ -27,24 +28,29 @@ def stock_view(request):
     stock_items = StockItem.objects.all()
     return render(request, 'stock_view.html', {'stock_item':stock_items})
 
-# List view for recipes
+@login_required
+@manager_required
+@production_required
 class RecipeListView(ListView):
     model = Recipe
     template_name = 'recipe_list.html'
     context_object_name = 'recipes'
 
-    @login_required
+#list if recipes
     def get_queryset(self):
         # include ingredients related to that recipe.
         return Recipe.objects.prefetch_related('ingredients')
 
 # View for displaying recipe details
 @login_required
+@manager_required
+@production_required
 def recipe_detail(request, pk):
     recipe = get_object_or_404(Recipe, pk=pk)
     return render(request, 'recipe_detail.html', {'recipe': recipe})
 
 @login_required
+@manager_required
 def create_recipe(request):
     if request.method == 'POST':
         # Create a RecipeForm instance from the POST data
@@ -73,6 +79,7 @@ def create_recipe(request):
     return render(request, 'create_recipe.html', {'form': form, 'formset': formset})
 
 @login_required
+@manager_required
 def update_recipe(request, pk):
     recipe = get_object_or_404(Recipe, pk=pk)
     if request.method == 'POST':
@@ -85,6 +92,7 @@ def update_recipe(request, pk):
     return render(request, 'update_recipe.html', {'form': form})
 
 @login_required
+@manager_required
 def delete_recipe(request, pk):
     recipe = get_object_or_404(Recipe, pk=pk)
     if request.method == 'POST':
@@ -92,23 +100,10 @@ def delete_recipe(request, pk):
         return redirect('recipe_list')
     return render(request, 'delete_recipe.html', {'recipe': recipe})
 
-@login_required
-def ingredient(request):
-    ingredient = Ingredient.objects.first()
-    return render(request)
 
 @login_required
-def ingredient_inventory_view(request):
-    ingredient_inventory = IngredientInventory.objects.all()
-    return render(request)
-
-@login_required
-def ingredient_incoming_view(request):
-    ingredient_incoming = IngredientIncoming.objects.first()
-    return render(request)
-
-
-@login_required
+@manager_required
+@production_required
 def production_view(request):
     if request.method == 'POST':
         recipe_id = request.POST['recipe']
@@ -122,10 +117,21 @@ def production_view(request):
         check_ingredient_availability(recipe_ingredients, quantity_produced)
 
         # Create production
-        create_production(recipe, recipe_ingredients, quantity_produced, produced_by)
+        production = create_production(recipe, recipe_ingredients, quantity_produced, produced_by)
+
+        # Check if the recipe is marked as a base
+        if recipe.is_base:
+            # add base to inventary
+            add_base_to_inventory(recipe, quantity_produced)
+        else:
+            # add ice cream to Stock
+            update_stock(recipe, production, produced_by)
 
         return redirect('production_view')
 
+@login_required
+@manager_required
+@production_required
 def check_ingredient_availability(recipe_ingredients, quantity_produced):
     for recipe_ingredient in recipe_ingredients:
         required_quantity = float(recipe_ingredient.quantity) * float(quantity_produced)
@@ -134,6 +140,9 @@ def check_ingredient_availability(recipe_ingredients, quantity_produced):
         if inventory.quantity < required_quantity:
             raise ValidationError(f"Ingredient {recipe_ingredient.ingredient.name} is not available in sufficient quantity.")
 
+@login_required
+@manager_required
+@production_required
 def create_production(recipe, recipe_ingredients, quantity_produced, produced_by):
     # Create production
     production = IceCreamProduction.objects.create(
@@ -148,35 +157,41 @@ def create_production(recipe, recipe_ingredients, quantity_produced, produced_by
         inventory = recipe_ingredient.ingredient.inventory
         inventory.quantity -= required_quantity
         inventory.save()
-
+    # Check if the recipe is marked as a base
     if recipe.is_base:
         add_base_to_inventory(recipe, quantity_produced)
 
 def add_base_to_inventory(recipe, quantity_produced):
-    base_ingredient_name = recipe.flavor  # Name of the new ingredient (base)
+    # Create the base ingredient
     base_ingredient, created = Ingredient.objects.get_or_create(
-        name=base_ingredient_name,
-        defaults={'unit_of_measurement': Ingredient.GRAMS} 
+        name=recipe.flavor,
+        defaults={'unit_of_measurement': Ingredient.GRAMS}
     )
 
     # Update inventory for the base
     base_ingredient.inventory.quantity += float(quantity_produced)
     base_ingredient.inventory.save()
 
-@login_required
+    # Update the inventory for the ingredients used to produce the base
+    for ingredient in recipe.base_ingredients.all():
+        required_quantity = float(ingredient.recipeingredient_set.get(recipe=recipe).quantity) * float(quantity_produced)
+        inventory_entry = IngredientInventory.objects.get(ingredient_name=ingredient)
+        inventory_entry.quantity -= required_quantity
+        inventory_entry.save()
+
+
 def update_stock(recipe, production, produced_by):
     # Update ice cream stock
-    stock_item, created = StockItem.objects.get_or_create(recipe=recipe, size=production.container_size)
+    stock_item, created = StockItem.objects.get_or_create(
+        recipe=recipe,
+        size=production.container_size
+    )
     stock_item.quantity += production.quantity_produced
     stock_item.added_by = produced_by
     stock_item.save()
 
-@login_required
-def stock_item_view(request):
-    stock_item = StockItem.objects.first()
-    return render(request)
 
-@login_required
+
 @receiver(post_save, sender=IceCreamProduction)
 def update_stock_on_production(sender, instance, created, **kwargs):
     if created:
@@ -189,6 +204,8 @@ def update_stock_on_production(sender, instance, created, **kwargs):
         stock_item.save()
 
 @login_required
+@manager_required
+@service_required
 def stock_takeout_view(request):
     if request.method == 'POST':
         stock_item_id = request.POST['stock_item']
@@ -199,24 +216,26 @@ def stock_takeout_view(request):
         # Validation: Check if there is enough ice cream in stock
         stock_item = StockItem.objects.get(pk=stock_item_id)
 
+        if float(quantity_moved) <= 0:
+            raise ValidationError("La cantidad debe ser un número positivo.")
+
         if stock_item.quantity < float(quantity_moved):
-            raise ValidationError("Not enough ice cream in stock.")
+            raise ValidationError("No hay suficiente helado en stock.")
 
         # Register the stock movement
         stock_takeout = IceCreamStockTakeOut.objects.create(
-            stock_item=stock_item,
+            ice_cream_production=stock_item,
             quantity_moved=quantity_moved,
             date_moved=date_moved,
             moved_by=moved_by
         )
 
-        stock_item.quantity -= quantity_moved
-        stock_item.save()
-
         return redirect('take_out_ice_cream')
 
 
 @login_required
+@service_required
+@manager_required
 def add_ingredient(request):
     if request.method == 'POST':
         ingredient_name = request.POST['ingredient_name']
@@ -232,28 +251,34 @@ def add_ingredient(request):
         try:
             ingredient = Ingredient.objects.get(name=ingredient_name)
         except Ingredient.DoesNotExist:
-            messages.error(request, 'The ingredient does not exist.')
+            messages.error(request, 'Ingredients doesnt exist')
             return redirect('add_ingredient')
 
+        if quantity <= 0:
+            raise ValidationError("quantity must be a positive number.")
+
         # Call a function to add the ingredient to inventory
-        add_to_inventory(ingredient, quantity)
+        if ingredient.is_base:
+            add_base_to_inventory(ingredient, quantity)
+        else:
+            add_to_inventory(ingredient, quantity)
 
         # Register the ingredient incoming
         register_ingredient_incoming(ingredient, quantity, lot_number, unit_weight, expiration_date, temperature, observations, received_by)
 
-        messages.success(request, 'Ingredient registered successfully.')
+        messages.success(request, 'Ingredient register succesfully.')
         return redirect('ingredient_inventory')
 
-@login_required
+
 def add_to_inventory(ingredient, quantity):
     # Get or create the inventory entry
-    inventory_entry, created = IngredientInventory.objects.get_or_create(ingredient=ingredient)
+    inventory_entry, created = IngredientInventory.objects.get_or_create(ingredient_name=ingredient)
 
-    # Update the existing quantity with the new quantity
-    inventory_entry.quantity += quantity
-    inventory_entry.save()
+    # Update the existing quantity with the new quantity if not there than creates it.
+    if not created:
+        inventory_entry.quantity += quantity
+        inventory_entry.save()
 
-@login_required
 def register_ingredient_incoming(ingredient, quantity, lot_number, unit_weight, expiration_date, temperature, observations, received_by):
     # Register for IngredientIncoming
     IngredientIncoming.objects.create(
@@ -269,6 +294,8 @@ def register_ingredient_incoming(ingredient, quantity, lot_number, unit_weight, 
 
 
 @login_required
+@manager_required
+@production_required
 def production_calculator_view(request):
     if request.method == 'POST':
         form = ProductionCalculatorForm(request.POST)

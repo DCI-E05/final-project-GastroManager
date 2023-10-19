@@ -4,28 +4,32 @@ from .models import Recipe, Ingredient
 class RecipeForm(forms.ModelForm):
     class Meta:
         model = Recipe
-        fields = ['flavor', 'is_base']  # Fields to be included in the form
+        fields = ['flavor', 'ingredients', 'base_ingredients']
 
-    # Multiple choice field for ingredients using checkboxes
     ingredients = forms.ModelMultipleChoiceField(
-        queryset=Ingredient.objects.all(),  # Queryset to populate the choices
-        widget=forms.CheckboxSelectMultiple,  # Checkbox widget for ingredient selection
+        queryset=Ingredient.objects.all(),
+        widget=forms.CheckboxSelectMultiple,
     )
 
-    # Decimal field for ingredient quantities with optional input
+    base_ingredients = forms.ModelMultipleChoiceField(
+        queryset=Ingredient.objects.all(),
+        widget=forms.CheckboxSelectMultiple,
+        required=False  # Ajusta esto según tus necesidades
+    )
+
     ingredient_quantities = forms.DecimalField(
-        label='Ingredient Quantities (grams or units)',  # Label for the field
-        widget=forms.TextInput(attrs={'placeholder': 'Enter quantities for selected ingredients'}),  # Placeholder text for input
-        required=False,  # Field is not required (optional)
+        label='Ingredient Quantities (grams or units)',
+        widget=forms.TextInput(attrs={'placeholder': 'Enter quantities for selected ingredients'}),
+        required=False,
     )
 
 class ProductionCalculatorForm(forms.Form):
     recipe = forms.ModelChoiceField(
         queryset=Recipe.objects.all(),
-        label='Seleccione una receta'
+        label='Seleccet a recipe'
     )
     
     desired_quantity = forms.DecimalField(
-        label='Cantidad deseada (gramos o unidades)',
-        widget=forms.TextInput(attrs={'placeholder': 'Ingrese la cantidad deseada'}),
+        label='Desire amount (grams or units)',
+        widget=forms.TextInput(attrs={'placeholder': 'Enter desire amount'}),
     )

@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import (Address, StockItem, StaffMember, IceCreamProduction, IceCreamStockTakeOut, Recipe, Ingredient, IngredientIncoming, IngredientInventory, RecipeIngredient, ManagerUser, ServiceUser, ProductionUser)
+from .models import (Address, StockItem, StaffMember, IceCreamProduction, IceCreamStockTakeOut, Recipe, Ingredient, IngredientIncoming, IngredientInventory, RecipeIngredient, UserProfile,)
 
 # Define an inline model for RecipeIngredient
 class RecipeIngredientInline(admin.TabularInline):
@@ -14,17 +14,34 @@ class RecipeAdmin(admin.ModelAdmin):
     search_fields = ('flavor',)
     inlines = [RecipeIngredientInline]  # Add the inline model to the Recipe admin
 
+class IngredientIncomingAdmin(admin.ModelAdmin):
+    list_display = ['ingredient', 'quantity', 'date_received']
+    raw_id_fields = ['ingredient']  # allow to look for available ingredient by name.
+   
+
 # Register models with the custom admin views
+class RecipeIngredientInline(admin.TabularInline):
+    model = RecipeIngredient
+    extra = 5
+
+class RecipeAdmin(admin.ModelAdmin):
+    list_display = ('flavor', 'is_base')
+    list_filter = ('is_base',)
+    search_fields = ('flavor',)
+    inlines = [RecipeIngredientInline]
+
+class IngredientIncomingAdmin(admin.ModelAdmin):
+    list_display = ['ingredient', 'quantity', 'date_received']
+    raw_id_fields = ['ingredient']
+
 admin.site.register(Address)
 admin.site.register(StaffMember)
 admin.site.register(Ingredient)
 admin.site.register(IngredientInventory)
-admin.site.register(IngredientIncoming)
+admin.site.register(IngredientIncoming, IngredientIncomingAdmin)
 admin.site.register(Recipe, RecipeAdmin)
 admin.site.register(RecipeIngredient)
 admin.site.register(IceCreamProduction)
 admin.site.register(StockItem)
 admin.site.register(IceCreamStockTakeOut)
-admin.site.register(ManagerUser)
-admin.site.register(ServiceUser)
-admin.site.register(ProductionUser)
+admin.site.register(UserProfile)

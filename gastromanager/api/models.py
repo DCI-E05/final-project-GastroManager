@@ -1,7 +1,7 @@
 from django.db import models
 from django.conf import settings
 from django.contrib.auth import get_user_model
-from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin, Group, Permission
+from django.contrib.auth.models import BaseUserManager, User 
 
 
 class Address(models.Model):
@@ -65,124 +65,13 @@ class CustomUserManager(BaseUserManager):
         user.save(using=self._db)
         return user
 
-# Custom user model for Manager
-class ManagerUser(AbstractBaseUser, PermissionsMixin):
-    username = models.CharField(max_length=30, unique=True)
-    email = models.EmailField(max_length=255, unique=True)
-    staff_member = models.OneToOneField(
-        StaffMember,
-        on_delete=models.CASCADE,
-        null=True,
-        blank=True,
-        related_name='manager_user',
-    )
-    
-    is_staff = models.BooleanField(
-        default=True,
-        help_text='Designates whether this user can access the admin site.',
-    )
 
-    groups = models.ManyToManyField(
-        Group,
-        verbose_name='groups',
-        blank=True,
-        related_name='manager_users', 
-        help_text='The groups this user belongs to. A user will get all permissions granted to each of their groups.',
-    )
-    
-    user_permissions = models.ManyToManyField(
-        Permission,
-        verbose_name='user permissions',
-        blank=True,
-        related_name='manager_users_permissions', 
-        help_text='Specific permissions for this user.',
-        related_query_name='manager_user',
-    )
-
-    objects = CustomUserManager()
-
-    USERNAME_FIELD = 'username'
-    REQUIRED_FIELDS = ['email']
-
-    def __str__(self):
-        return self.username
-    
-
-
-# Custom user model for Service
-class ServiceUser(AbstractBaseUser, PermissionsMixin):
-    username = models.CharField(max_length=30, unique=True)
-    email = models.EmailField(max_length=255, unique=True)
-    staff_member = models.OneToOneField(
-        StaffMember,
-        on_delete=models.CASCADE,
-        null=True,
-        blank=True,
-        related_name='service_user',
-    )
-
-    groups = models.ManyToManyField(
-        Group,
-        verbose_name='groups',
-        blank=True,
-        related_name='service_users', 
-        help_text='The groups this user belongs to. A user will get all permissions granted to each of their groups.',
-    )
-    
-    user_permissions = models.ManyToManyField(
-        Permission,
-        verbose_name='user permissions',
-        blank=True,
-        related_name='service_users_permissions', 
-        help_text='Specific permissions for this user.',
-        related_query_name='service_user',
-    )
-    
-    objects = CustomUserManager()
-
-    USERNAME_FIELD = 'username'
-    REQUIRED_FIELDS = ['email']
-
-    def __str__(self):
-        return self.username
-
-# Custom user model for Production
-class ProductionUser(AbstractBaseUser, PermissionsMixin):
-    username = models.CharField(max_length=30, unique=True)
-    email = models.EmailField(max_length=255, unique=True)
-    staff_member = models.OneToOneField(
-        StaffMember,
-        on_delete=models.CASCADE,
-        null=True,
-        blank=True,
-        related_name='production_user',
-    )
-    
-    groups = models.ManyToManyField(
-        Group,
-        verbose_name='groups',
-        blank=True,
-        related_name='production_users', 
-        help_text='The groups this user belongs to. A user will get all permissions granted to each of their groups.',
-    )
-    
-    user_permissions = models.ManyToManyField(
-        Permission,
-        verbose_name='user permissions',
-        blank=True,
-        related_name='production_users_permissions', 
-        help_text='Specific permissions for this user.',
-        related_query_name='production_user',
-    )
-    
-    objects = CustomUserManager()
-
-    USERNAME_FIELD = 'username'
-    REQUIRED_FIELDS = ['email']
-
-    def __str__(self):
-        return self.username
-
+class UserProfile(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    # tip of user
+    is_manager = models.BooleanField(default=False)
+    is_service = models.BooleanField(default=False)
+    is_production = models.BooleanField(default=False)
 
 class WorkingHours(models.Model):
     pass
@@ -212,7 +101,7 @@ class Ingredient(models.Model): # Model to represent an ingredient
 
 class IngredientInventory(models.Model):
     ingredient_name = models.ForeignKey(Ingredient, on_delete=models.CASCADE)
-    quantity = models.DecimalField(max_digits=10, decimal_places=2, default=None, null=True)  # Changed to DecimalField to handle decimals
+    quantity = models.DecimalField(max_digits=10, decimal_places=2, null=True) 
 
     def __str__(self):
         unit = self.ingredient_name.unit_of_measurement  # Get the unit of measurement from the related Ingredient
@@ -226,19 +115,14 @@ class IngredientInventory(models.Model):
             # If the unit is neither "grams" nor "units," display only the ingredient name
             return self.ingredient_name.name
         
-    @classmethod
     def update_or_create_inventory(cls, ingredient, new_quantity):
-        # Get the existing inventory entry for the given ingredient
-        inventory_entry, created = cls.objects.get_or_create(ingredient=ingredient)
+        # Get or create the inventory entry
+        inventory_entry, created = cls.objects.get_or_create(ingredient_name=ingredient)
 
-        # If a new entry was created, set the quantity to the new quantity
-        if created:
-            inventory_entry.quantity = new_quantity
-        else:
-            # If the entry already existed, simply add the new quantity to the existing quantity
+        # Update the existing quantity with the new quantity if not created
+        if not created:
             inventory_entry.quantity += new_quantity
-
-        inventory_entry.save()
+            inventory_entry.save()
 
 class IngredientIncoming(models.Model): #  model represents incoming ingredients in the shop.
 
@@ -251,7 +135,7 @@ class IngredientIncoming(models.Model): #  model represents incoming ingredients
     
     ingredient = models.ForeignKey(Ingredient, on_delete=models.CASCADE)
     quantity = models.DecimalField(max_digits=10, decimal_places=2)
-    unit_weight = models.CharField(max_length=10, choices=UNIT_CHOICES, default=GRAMS)
+    unit_of_measurement = models.CharField(max_length=10, choices=UNIT_CHOICES, default=GRAMS)
     date_received = models.DateTimeField(auto_now_add=True)  #date time automatic
     lot_number = models.CharField(max_length=255, blank=True, null=True)
     expiration_date = models.DateField(blank=True, null=True)
@@ -266,19 +150,19 @@ class IngredientIncoming(models.Model): #  model represents incoming ingredients
 
 class Recipe(models.Model):
     flavor = models.CharField(max_length=255, unique=True)
-    is_base = models.BooleanField(default=False)  # to identify as base or ice cream
+    is_base = models.BooleanField(default=False)
     ingredients = models.ManyToManyField('Ingredient', through='RecipeIngredient')
 
     def __str__(self):
         return self.flavor
-    
-class RecipeIngredient(models.Model): # Model to represent the ingredients in a recipe
-    recipe_name = models.ForeignKey(Recipe, on_delete=models.CASCADE)
+
+class RecipeIngredient(models.Model):
+    recipe = models.ForeignKey(Recipe, on_delete=models.CASCADE)
     ingredient = models.ForeignKey(Ingredient, on_delete=models.CASCADE)
     quantity = models.DecimalField(max_digits=10, decimal_places=2)
 
     def __str__(self):
-        return f"{self.recipe_name} - {self.ingredient.name}: {self.quantity}"
+        return f"{self.recipe} - {self.ingredient.name}: {self.quantity}"
     
 class StockItem(models.Model): # model represents IceCream in stock.
 
