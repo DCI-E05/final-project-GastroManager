@@ -1,12 +1,13 @@
 from django.urls import path
 from django.views.generic import TemplateView
 from . import views
+from .views import RecipeListView
 
 urlpatterns = [
     path('blank-login/', TemplateView.as_view(template_name='blank_login.html'), name='blank_login'),
     path("staff/", views.staff_view, name="staff"),
     path("stock/", views.stock_view, name="stock"),
-    path("recipes/", views.RecipeListView.as_view(), name="recipe_list"),
+    path("recipes/", RecipeListView.as_view(), name="recipe_list"),
     path("recipes/<int:pk>/", views.recipe_detail, name="recipe_detail"),
     path("recipes/create/", views.create_recipe, name="create_recipe"),
     path("recipes/update/<int:pk>/", views.update_recipe, name="update_recipe"),

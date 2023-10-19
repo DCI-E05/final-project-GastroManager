@@ -11,6 +11,7 @@ from django.db.models.signals import post_save
 from django.db import transaction
 from django.dispatch import receiver
 from .decorators import manager_required, service_required, production_required
+from django.utils.decorators import method_decorator
 
 
 
@@ -28,14 +29,12 @@ def stock_view(request):
     stock_items = StockItem.objects.all()
     return render(request, 'stock_view.html', {'stock_item':stock_items})
 
-@login_required
-@manager_required
-@production_required
+#had to change auth decorator to use it class based view!
+@method_decorator(login_required, name='dispatch')
 class RecipeListView(ListView):
     model = Recipe
     template_name = 'recipe_list.html'
     context_object_name = 'recipes'
-
 #list if recipes
     def get_queryset(self):
         # include ingredients related to that recipe.
@@ -234,8 +233,8 @@ def stock_takeout_view(request):
 
 
 @login_required
-@service_required
 @manager_required
+@service_required
 def add_ingredient(request):
     if request.method == 'POST':
         ingredient_name = request.POST['ingredient_name']
