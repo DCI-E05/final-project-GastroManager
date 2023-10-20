@@ -1,6 +1,8 @@
+
 from django.shortcuts import render, redirect, get_object_or_404
 from .models import StaffMember, Recipe, Ingredient, IngredientInventory, IngredientIncoming, RecipeIngredient, IceCreamProduction, StockItem, IceCreamStockTakeOut 
 from .forms import RecipeForm, ProductionCalculatorForm
+
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.views.generic import ListView
@@ -321,3 +323,4 @@ def calculate_production(recipe, desired_quantity):
     recipe_ingredients = RecipeIngredient.objects.filter(recipe=recipe)
 
     check_ingredient_availability(recipe_ingredients, desired_quantity)
+
