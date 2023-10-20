@@ -46,8 +46,8 @@ INSTALLED_APPS = [
     "drf_yasg",
 ]
 
-AUTH_USER_MODEL = 'api.ManagerUser' #added for the manager model
 
+LOGIN_URL = 'blank_login' #for not authorizade users. we need to make sure that the 'blank_login' is the same as in urls.py form api app.
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",

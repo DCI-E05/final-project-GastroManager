@@ -1,40 +1,47 @@
 from django.contrib import admin
 
-from .models import (Address, StockItem,StaffMember,IceCreamProduction, IceCreamStockTakeOut, Recipe, Ingredient, IngredientIncoming,IngredientInventory, Base, BaseIngredient, IceCreamBase, RecipeIngredient,ManagerUser,  ServiceUser, ProductionUser )
+from .models import (Address, StockItem, StaffMember, IceCreamProduction, IceCreamStockTakeOut, Recipe, Ingredient, IngredientIncoming, IngredientInventory, RecipeIngredient, UserProfile,)
+
+# Define an inline model for RecipeIngredient
+class RecipeIngredientInline(admin.TabularInline):
+    model = RecipeIngredient
+    extra = 5  # Adjust this number to control how many ingredients you can add at once
+
+# Customize the Recipe model in the admin panel
+class RecipeAdmin(admin.ModelAdmin):
+    list_display = ('flavor', 'is_base')
+    list_filter = ('is_base',)
+    search_fields = ('flavor',)
+    inlines = [RecipeIngredientInline]  # Add the inline model to the Recipe admin
 
 class IngredientIncomingAdmin(admin.ModelAdmin):
-    list_display = ('ingredient', 'quantity', 'unit_weight', 'date_received', 'lot_number', 'expiration_date', 'temperature', 'received_by')
-    list_filter = ('ingredient', 'unit_weight')
-    search_fields = ('ingredient__name', 'lot_number', 'received_by__username')
+    list_display = ['ingredient', 'quantity', 'date_received']
+    raw_id_fields = ['ingredient']  # allow to look for available ingredient by name.
+   
 
-class IngredientInventoryAdmin(admin.ModelAdmin):
-    list_display = ('ingredient', 'quantity', 'last_updated')
-    list_filter = ('ingredient',)
-    search_fields = ('ingredient__name',)
+# Register models with the custom admin views
+class RecipeIngredientInline(admin.TabularInline):
+    model = RecipeIngredient
+    extra = 5
 
-class IceCreamProductionAdmin(admin.ModelAdmin):
-    list_display = ('flavor', 'container_size', 'quantity_produced', 'date_produced', 'produced_by')
-    list_filter = ('flavor', 'container_size')
-    search_fields = ('flavor', 'produced_by__username')
+class RecipeAdmin(admin.ModelAdmin):
+    list_display = ('flavor', 'is_base')
+    list_filter = ('is_base',)
+    search_fields = ('flavor',)
+    inlines = [RecipeIngredientInline]
 
-class IngredientAdmin(admin.ModelAdmin):
-    list_display = ('name', 'unit_of_measurement')
-    search_fields = ('name',)
-
+class IngredientIncomingAdmin(admin.ModelAdmin):
+    list_display = ['ingredient', 'quantity', 'date_received']
+    raw_id_fields = ['ingredient']
 
 admin.site.register(Address)
 admin.site.register(StaffMember)
-admin.site.register(Ingredient, IngredientAdmin)
-admin.site.register(IngredientInventory, IngredientInventoryAdmin)
+admin.site.register(Ingredient)
+admin.site.register(IngredientInventory)
 admin.site.register(IngredientIncoming, IngredientIncomingAdmin)
-admin.site.register(Base)
-admin.site.register(BaseIngredient)
-admin.site.register(Recipe)
+admin.site.register(Recipe, RecipeAdmin)
 admin.site.register(RecipeIngredient)
-admin.site.register(IceCreamBase)
-admin.site.register(IceCreamProduction, IceCreamProductionAdmin)
+admin.site.register(IceCreamProduction)
 admin.site.register(StockItem)
 admin.site.register(IceCreamStockTakeOut)
-admin.site.register(ManagerUser)
-admin.site.register(ServiceUser)
-admin.site.register(ProductionUser)
+admin.site.register(UserProfile)
