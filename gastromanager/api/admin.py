@@ -1,7 +1,18 @@
 from django.contrib import admin
 
-from .models import (Address, StockItem, StaffMember, IceCreamProduction, IceCreamStockTakeOut, Recipe, Ingredient, IngredientIncoming, IngredientInventory, RecipeIngredient, UserProfile,)
+from .models import Address, StockItem, IceCreamProduction, IceCreamStockTakeOut, Recipe, Ingredient, IngredientIncoming, IngredientInventory, RecipeIngredient, UserProfile
+from django.contrib.auth.admin import UserAdmin
 
+
+
+class UserProfileAdmin(UserAdmin):
+    # Campos que deseas mostrar en el formulario de edición del usuario
+    fieldsets = (
+        (None, {'fields': ('username', 'password')}),
+        ('Personal info', {'fields': ('first_name', 'last_name', 'email', 'date_of_birth', 'address', 'phone', 'level')}),
+        ('Important dates', {'fields': ('last_login', 'date_joined')}),
+        ('User status', {'fields': ('is_active', 'is_staff', 'is_superuser')}),
+    )
 # Define an inline model for RecipeIngredient
 class RecipeIngredientInline(admin.TabularInline):
     model = RecipeIngredient
@@ -35,7 +46,6 @@ class IngredientIncomingAdmin(admin.ModelAdmin):
     raw_id_fields = ['ingredient']
 
 admin.site.register(Address)
-admin.site.register(StaffMember)
 admin.site.register(Ingredient)
 admin.site.register(IngredientInventory)
 admin.site.register(IngredientIncoming, IngredientIncomingAdmin)
@@ -44,4 +54,4 @@ admin.site.register(RecipeIngredient)
 admin.site.register(IceCreamProduction)
 admin.site.register(StockItem)
 admin.site.register(IceCreamStockTakeOut)
-admin.site.register(UserProfile)
+admin.site.register(UserProfile, UserProfileAdmin) 

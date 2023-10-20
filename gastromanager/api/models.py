@@ -1,7 +1,7 @@
 from django.db import models
 from django.conf import settings
 from django.contrib.auth import get_user_model
-from django.contrib.auth.models import BaseUserManager, User 
+from django.contrib.auth.models import BaseUserManager, AbstractUser 
 
 
 class Address(models.Model):
@@ -18,60 +18,22 @@ class Address(models.Model):
         return f"{self.line_1}, {self.city}, {self.state}, {self.country}"
 
 
-class StaffMember(models.Model):
-    name = models.CharField(max_length=255)
-
-    date_of_birth = models.DateField()
-    address = models.ForeignKey(
-        Address, on_delete=models.CASCADE
-    )
-    email = models.CharField(max_length=255)
+class UserProfile(AbstractUser): 
+    date_of_birth = models.DateField(null=True)
+    address = models.ForeignKey(Address, on_delete=models.CASCADE, null=True)
     phone = models.CharField(max_length=255)
-    
+
     # Choices for the staff member's role
     LEVEL_CHOICES = [
         ('Service', 'Service'),
         ('Manager', 'Manager'),
         ('Production', 'Production'),
     ]
-    level = models.CharField(max_length=10, choices=LEVEL_CHOICES,default='Service')
-
+    level = models.CharField(max_length=10, choices=LEVEL_CHOICES, default='Service')
 
     def __str__(self):
-        return self.name
+        return self.username
 
-
-# Custom user manager class
-class CustomUserManager(BaseUserManager):
-    # Create a regular user
-    def create_user(self, username, email, password=None):
-        if not email:
-            raise ValueError('The Email field must be set')
-        email = self.normalize_email(email)
-        user = self.model(username=username, email=email)
-        user.set_password(password)
-        user.save(using=self._db)
-        return user
-    
-    # Create a superuser
-    def create_superuser(self, username, email, password=None):
-        if not email:
-            raise ValueError('The Email field must be set')
-        email = self.normalize_email(email)
-        user = self.model(username=username, email=email)
-        user.set_password(password)
-        user.is_staff = True
-        user.is_superuser = True
-        user.save(using=self._db)
-        return user
-
-
-class UserProfile(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE)
-    # tip of user
-    is_manager = models.BooleanField(default=False)
-    is_service = models.BooleanField(default=False)
-    is_production = models.BooleanField(default=False)
 
 class WorkingHours(models.Model):
     pass

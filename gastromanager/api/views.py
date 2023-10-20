@@ -1,5 +1,5 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from .models import StaffMember, Recipe, Ingredient, IngredientInventory, IngredientIncoming, RecipeIngredient, IceCreamProduction, StockItem, IceCreamStockTakeOut 
+from .models import UserProfile,Recipe, Ingredient, IngredientInventory, IngredientIncoming, RecipeIngredient, IceCreamProduction, StockItem, IceCreamStockTakeOut 
 from .forms import RecipeForm, ProductionCalculatorForm
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -21,7 +21,7 @@ RecipeIngredientFormSet = modelformset_factory(RecipeIngredient, fields=('ingred
 
 @login_required
 def staff_view(request):
-    staff = StaffMember.objects.first()
+    staff = UserProfile.objects.first()
     return render(request, 'staff_view.html', {'staff': staff})
 
 @login_required

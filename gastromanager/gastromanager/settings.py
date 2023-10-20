@@ -52,6 +52,8 @@ INSTALLED_APPS = [
 
 ]
 
+AUTH_USER_MODEL = 'api.UserProfile' #for using AbstractUser
+
 
 LOGIN_URL = 'blank_login' #for not authorizade users. we need to make sure that the 'blank_login' is the same as in urls.py form api app.
 
