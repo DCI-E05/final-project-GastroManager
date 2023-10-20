@@ -13,6 +13,13 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 from pathlib import Path
 from dotenv import load_dotenv
 import os
+from django.core.wsgi import get_wsgi_application
+
+# Set the DJANGO_SETTINGS_MODULE environment variable
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "gastromanager.settings")
+
+# For Django 3.0 or higher, enable async mode to resolve the issue
+os.environ["DJANGO_ALLOW_ASYNC_UNSAFE"] = "true"
 
 load_dotenv()
 
@@ -42,8 +49,7 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "api",
-    "rest_framework",
-    "drf_yasg",
+
 ]
 
 

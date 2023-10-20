@@ -1,9 +1,9 @@
 import pytest
 from django.core.exceptions import ValidationError
 from django.contrib.auth import get_user_model
-from ..models import Ingredient, IngredientInventory, Recipe, RecipeIngredient, IceCreamProduction, StockItem, IceCreamStockTakeOut, IngredientIncoming
+from api.models import Ingredient, IngredientInventory, Recipe, RecipeIngredient, IceCreamProduction, StockItem, IceCreamStockTakeOut, IngredientIncoming
 from django.test import Client
-from ..forms import RecipeForm, ProductionCalculatorForm
+from api.forms import RecipeForm, ProductionCalculatorForm
 from django.urls import reverse
 
 #fixture: These fixtures ensure that the test cases have consistent and controlled data to work with, improving the reliability of the tests.
