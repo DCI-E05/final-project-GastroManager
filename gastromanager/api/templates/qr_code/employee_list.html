@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Employee List</title>
+</head>
+<body>
+    <h1>Employee List</h1>
+    <form method="POST" action="{% url 'api:badge_maker' %}">
+        {% csrf_token %}
+        <label for="employee_id">Select an Employee:</label>
+        <select name="employee_id" id="employee_id">
+            {% for employee in employees %}
+                <option value="{{ employee.id }}">{{ employee.name }}</option>
+            {% endfor %}
+        </select>
+        <input type="submit" value="Generate Badge">
+    </form>
+</body>
+</html>

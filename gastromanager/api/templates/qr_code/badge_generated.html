@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Badge Generated</title>
+</head>
+<body>
+    <h1>Badge Generated</h1>
+    {% if file_name %}
+        <img src="{{ file_name }}" alt="Generated Badge">
+        <a href="{{ file_name }}" download>Download Badge</a>
+    {% else %}
+        <p>Badge not generated.</p>
+    {% endif %}
+</body>
+</html>
