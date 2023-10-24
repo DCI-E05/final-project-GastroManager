@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Address, StockItem, IceCreamProduction, IceCreamStockTakeOut, Recipe, Ingredient, IngredientIncoming, IngredientInventory, RecipeIngredient, UserProfile
+from .models import Address, StockItem, IceCreamProduction, IceCreamStockTakeOut, Recipe, Ingredient, IngredientIncoming, IngredientInventory, RecipeIngredient, UserProfile, Journal
 from django.contrib.auth.admin import UserAdmin
 
 
@@ -55,3 +55,4 @@ admin.site.register(IceCreamProduction)
 admin.site.register(StockItem)
 admin.site.register(IceCreamStockTakeOut)
 admin.site.register(UserProfile, UserProfileAdmin) 
+admin.site.register(Journal)

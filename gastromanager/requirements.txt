@@ -4,6 +4,7 @@ backports.zoneinfo==0.2.1
 black==23.9.1
 click==8.1.7
 Django==4.2.5
+django-activity-stream==2.0.0
 djangorestframework==3.14.0
 drf-yasg==1.21.7
 exceptiongroup==1.1.3
