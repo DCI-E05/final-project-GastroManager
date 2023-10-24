@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+
+{% block content %}
+  <h1>Journal</h1>
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Timestamp</th>
+        <th>User</th>
+        <th>Activity</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for entry in journal %}
+        <tr>
+          <td>{{ entry.timestamp }}</td>
+          <td>{{ entry.user }}</td>
+          <td>{{ entry.activity }}</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  <a href="{% url 'welcome' %}">Back to Welcome</a>
+{% endblock %}

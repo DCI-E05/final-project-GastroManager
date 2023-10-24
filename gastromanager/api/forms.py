@@ -1,5 +1,9 @@
 from django import forms
-from .models import Recipe, Ingredient
+from .models import Recipe, Ingredient, UserProfile, IngredientInventory
+from django.contrib.auth.forms import UserChangeForm
+from django.core.exceptions import ValidationError
+
+
 
 class RecipeForm(forms.ModelForm):
     class Meta:
@@ -23,6 +27,17 @@ class RecipeForm(forms.ModelForm):
         required=False,
     )
 
+    new_ingredient_name = forms.CharField(
+        max_length=255,
+        label='New Ingredient Name',
+        required=False,
+    )
+    
+    new_ingredient_quantity = forms.DecimalField(
+        label='New Ingredient Quantity',
+        required=False,
+    )
+
 class ProductionCalculatorForm(forms.Form):
     recipe = forms.ModelChoiceField(
         queryset=Recipe.objects.all(),
@@ -33,3 +48,22 @@ class ProductionCalculatorForm(forms.Form):
         label='Desire amount (grams or units)',
         widget=forms.TextInput(attrs={'placeholder': 'Enter desire amount'}),
     )
+
+
+class CustomUserForm(UserChangeForm):
+    class Meta:
+        model = UserProfile
+        fields = ('username', 'password', 'first_name', 'last_name', 'email', 'date_of_birth', 'address', 'phone', 'level', 'is_active', 'is_staff', 'is_superuser')
+
+
+# Ingredient Inventory Update Form
+class IngredientInventoryUpdateForm(forms.ModelForm):
+    class Meta:
+        model = IngredientInventory
+        fields = ('quantity',)
+
+    def clean_quantity(self):
+        quantity = self.cleaned_data.get('quantity')
+        if quantity < 0:
+            raise ValidationError("Quantity must be a positive number.")
+        return quantity

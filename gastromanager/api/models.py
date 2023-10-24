@@ -42,9 +42,6 @@ class UserProfile(AbstractUser):
         return self.username
 
 
-class WorkingHours(models.Model):
-    pass
-
 
 class Ingredient(models.Model): # Model to represent an ingredient
 

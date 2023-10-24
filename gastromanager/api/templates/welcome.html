@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <h1>Welcome to Gastro Manager</h1>
+    <h2>Available Options:</h2>
+    <ul class="list-group">
+        {% for option, url_name in user_options.items %}
+            <li class="list-group-item"><a href="{% url url_name %}">{{ option }}</a></li>
+        {% endfor %}
+    </ul>
+    
+    
+{% endblock %}
