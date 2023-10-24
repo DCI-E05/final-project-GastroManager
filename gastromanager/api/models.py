@@ -83,7 +83,7 @@ class EmployeeBadge(models.Model):
 
         badge.paste(logo, (45, 20))
 
-        file_name = f"api/badges/{self.employee_name.replace(' ', '_')}_badge.png"
+        file_name = f"{self.employee_name.replace(' ', '_')}_Badge.png"
         badge.save(file_name)
 
         return file_name

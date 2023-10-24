@@ -39,7 +39,6 @@ from .decorators import (
 )
 
 
-
 RecipeIngredientFormSet = modelformset_factory(
     RecipeIngredient, fields=("ingredient", "quantity"), extra=5
 )
@@ -473,6 +472,15 @@ def generate_employee_badge(request):
             employee_name=selected_employee.name, employee_id=selected_employee.id
         )
         file_name = badge.generate_badge()
-        return render(request, "api/badge_generated.html", {"file_name": file_name})
+
+        if file_name:
+            with open(file_name, "rb") as badge_file:
+                response = HttpResponse(
+                    badge_file.read(), content_type="application/pdf"
+                )
+                response["Content-Disposition"] = f'attachment; filename="{file_name}"'
+                return response
+        else:
+            return HttpResponse("Badge not generated.")
 
     return render(request, "api/employee_list.html", {"employees": employees})
