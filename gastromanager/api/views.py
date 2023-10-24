@@ -1,8 +1,6 @@
-
 from django.shortcuts import render, redirect, get_object_or_404
-from .models import UserProfile,Recipe, Ingredient, IngredientInventory, IngredientIncoming, RecipeIngredient, IceCreamProduction, StockItem, IceCreamStockTakeOut 
+from .models import TimeEntry,UserProfile,Recipe, Ingredient, IngredientInventory, IngredientIncoming, RecipeIngredient, IceCreamProduction, StockItem, IceCreamStockTakeOut 
 from .forms import RecipeForm, ProductionCalculatorForm
-
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.views.generic import ListView
@@ -14,8 +12,10 @@ from django.db import transaction
 from django.dispatch import receiver
 from .decorators import manager_required, service_required, production_required
 from django.utils.decorators import method_decorator
-
-
+from datetime import datetime
+from django.http import HttpResponse
+from django.contrib.auth import authenticate, login
+from csv import writer
 
 
 RecipeIngredientFormSet = modelformset_factory(RecipeIngredient, fields=('ingredient', 'quantity'), extra=5)
@@ -323,4 +323,107 @@ def calculate_production(recipe, desired_quantity):
     recipe_ingredients = RecipeIngredient.objects.filter(recipe=recipe)
 
     check_ingredient_availability(recipe_ingredients, desired_quantity)
+
+@login_required
+def clock_in(request):
+    current_user = request.user
+
+    # Create a new TimeEntry for the user
+    entry = TimeEntry(employee=current_user, date=datetime.now().date(), clock_in_time=datetime.now().time())
+    entry.save()
+
+    return redirect('clock_out')
+
+@login_required
+def clock_out(request):
+    current_user = request.user
+    entry = TimeEntry.objects.filter(employee=current_user, clock_out_time__isnull=True).last()
+
+    if not entry:
+        return HttpResponse("No active clock-in found. Please clock in first.")
+    
+    now = datetime.now()
+    delta = datetime.combine(now.date(), now.time()) - datetime.combine(entry.date, entry.clock_in_time)
+    entry.clock_out_time = now.time()
+    entry.hours_worked = round(delta.total_seconds() / 3600, 2)  # Rounded to 2 decimal places
+    entry.save()
+
+    return HttpResponse(f"Clocked out successfully! You worked for {entry.hours_worked} hours")
+
+@login_required
+def time_entry_view(request):
+    current_user = request.user
+
+    # Check if the user is currently clocked in
+    entry = TimeEntry.objects.filter(employee=current_user, clock_out_time__isnull=True).last()
+
+    
+    clocked_in = entry is not None and entry.clock_out_time is None
+    hours_worked = None
+
+    if request.method == "POST":
+        action=request.POST.get('action')
+        if action == 'clock_in':
+            TimeEntry.objects.create(employee=current_user, date=datetime.now().date(), clock_in_time=datetime.now().time())
+            return redirect('time_entry_view')
+        
+        elif action == 'clock_out' and entry:
+            now = datetime.now()
+            entry.clock_out_time = now.time()
+            entry.save()
+
+        # Calculate hours worked for clock_out action
+        hours_worked = 0
+        if entry:
+            if entry.clock_out_time or just_clocked_out:
+                start_dt = datetime.combine(entry.date, entry.clock_in_time)
+                end_dt = datetime.combine(entry.date, entry.clock_out_time if entry.clock_out_time else datetime.now().time())
+                time_difference = end_dt - start_dt
+                hours_worked = time_difference.total_seconds() / 3600
+            else:
+                now = datetime.now()
+                delta = now - datetime.combine(entry.date, entry.clock_in_time)
+                hours_worked = delta.total_seconds() / 3600
+    
+    
+    return render(request, 'time_entry.html', {
+            'clocked_in': clocked_in,
+            'hours_worked': hours_worked
+        })
+
+
+
+@login_required
+def export_timesheet(request, employee_id, month):
+    # Fetch the user's time entries
+    time_entries = TimeEntry.objects.filter(employee=request.user)
+    
+    # Create the HttpResponse object with the appropriate headers
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = 'attachment; filename="timesheet.csv"'
+
+    csv_writer = writer(response)
+    csv_writer.writerow(['Date', 'Clock In Time', 'Clock Out Time', 'Hours Worked'])
+    
+    for entry in time_entries:
+        csv_writer.writerow([entry.date, entry.clock_in_time, entry.clock_out_time, (entry.hours_worked if entry.hours_worked else 'Not Clocked Out')])
+    
+    return response
+
+
+
+def login_view(request):
+    if request.method == 'POST':
+        username = request.POST['username']
+        password = request.POST['password']
+        user = authenticate(request, username=username, password=password)
+        
+        if user is not None:
+            login(request, user)
+            return redirect('clock_in')  # Redirects to the 'clock_in' URL pattern
+        else:
+            return("Invalid login credentials")
+            
+
+    return render(request, 'login.html')
 

@@ -1,0 +1,30 @@
+
+
+{% extends "base.html" %}
+{% load tz %}
+{% block content %}
+
+<h2>Welcome, {{ user.first_name }}!</h2>
+
+{% if not clocked_in %}
+    <form method="post" action="{% url 'time_entry_view' %}">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="clock_in">
+        <button type="submit">Clock In</button>
+    </form>
+{% else %}
+    <form method="post" action="{% url 'time_entry_view' %}">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="clock_out">
+        <button type="submit">Clock Out</button>
+    </form>
+{% endif %}
+{% if hours_worked %}
+    <p>You have worked for {{ hours_worked|floatformat:2 }} hours today.</p>
+{% endif %}
+
+{% if not clocked_in %}
+    <a href="{% url 'export_timesheet' employee_id=request.user.id month=now|date:'m' %}" class="btn btn-primary">Export Timesheet</a>
+{% endif %}
+
+{% endblock %}

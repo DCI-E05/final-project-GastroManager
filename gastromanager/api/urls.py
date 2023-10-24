@@ -15,4 +15,7 @@ urlpatterns = [
     path("stock-takeout/", views.stock_takeout_view, name="stock_takeout"),
     path("add-ingredient/", views.add_ingredient, name="add_ingredient"),
     path("production-calculator/", views.production_calculator_view, name="production_calculator"),
+    path('export-timesheet/<int:employee_id>/<int:month>/', views.export_timesheet, name='export_timesheet'),
+    path('time-entry/', views.time_entry_view, name='time_entry_view'),
+    path('login/', views.login_view, name="login")
 ]

@@ -1,5 +1,5 @@
 from django import forms
-from .models import Recipe, Ingredient
+from .models import Recipe, Ingredient, TimeEntry
 
 class RecipeForm(forms.ModelForm):
     class Meta:
@@ -33,3 +33,8 @@ class ProductionCalculatorForm(forms.Form):
         label='Desire amount (grams or units)',
         widget=forms.TextInput(attrs={'placeholder': 'Enter desire amount'}),
     )
+
+class TimeEntryForm(forms.ModelForm):
+    class Meta:
+        model = TimeEntry
+        fields = ['clock_in_time', 'clock_out_time']

@@ -35,9 +35,6 @@ class UserProfile(AbstractUser):
         return self.username
 
 
-class WorkingHours(models.Model):
-    pass
-
 
 class Ingredient(models.Model): # Model to represent an ingredient
 
@@ -159,5 +156,11 @@ class IceCreamStockTakeOut(models.Model): # model represents ice cream takn out 
         return f"{self.ice_cream_production.recipe} ({self.ice_cream_production.container_size}L) - {self.quantity_moved} sold on {self.date_moved}"
 
 
-
+class TimeEntry(models.Model):
+    employee = models.ForeignKey(UserProfile, on_delete=models.CASCADE)
+    date = models.DateField()
+    clock_in_time = models.TimeField()
+    clock_out_time = models.TimeField(null=True, blank=True)
+    hours_worked = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
+    
 

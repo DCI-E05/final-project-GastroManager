@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2>Edit Timesheet</h2>
+
+<form method="post">
+    {% csrf_token %}
+    <table>
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Clock In</th>
+                <th>Clock Out</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for entry in entries %}
+            <tr>
+                <td>{{ entry.date }}</td>
+                <td><input type="time" name="clock_in_{{ entry.id }}" value="{{ entry.clock_in_time|date:"H:i" }}"></td>
+                <td><input type="time" name="clock_out_{{ entry.id }}" value="{{ entry.clock_out_time|date:"H:i" }}"></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <input type="submit" value="Save Changes">
+</form>
+{% endblock %}

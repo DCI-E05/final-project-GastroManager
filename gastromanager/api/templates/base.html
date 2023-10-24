@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ice Cream Shop Management</title>
+    <!-- You can include stylesheets or any other head elements here -->
+</head>
+<body>
+
+<header>
+    <!-- This can contain a navigation bar or any other header content -->
+    <nav>
+        <ul>
+            <li><a href="{% url 'login' %}">Login</a></li>
+            <!-- Add other navigation links as needed -->
+        </ul>
+    </nav>
+</header>
+
+<main>
+    <!-- This is where the content of other templates will be injected -->
+    {% block content %}
+    {% endblock %}
+</main>
+
+<footer>
+    <!-- You can add footer content like copyright notices or other links here -->
+    <p>&copy; 2023 Ice Cream Shop Management</p>
+</footer>
+
+<!-- Include any JavaScript files or scripts here -->
+
+</body>
+</html>
