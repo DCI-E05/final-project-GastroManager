@@ -1,8 +1,7 @@
 
 from django.shortcuts import render, redirect, get_object_or_404
-from .models import UserProfile,Recipe, Ingredient, IngredientInventory, IngredientIncoming, RecipeIngredient, IceCreamProduction, StockItem, IceCreamStockTakeOut 
+from .models import UserProfile,Recipe, Ingredient, IngredientInventory, IngredientIncoming, RecipeIngredient, IceCreamProduction, StockItem, IceCreamStockTakeOut, Journal 
 from .forms import RecipeForm, ProductionCalculatorForm
-
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.views.generic import ListView
@@ -12,7 +11,7 @@ from django.core.exceptions import ValidationError
 from django.db.models.signals import post_save
 from django.db import transaction
 from django.dispatch import receiver
-from .decorators import manager_required, service_required, production_required
+from .decorators import manager_required, service_required, production_required, register_activity
 from django.utils.decorators import method_decorator
 
 
@@ -31,7 +30,13 @@ def stock_view(request):
     stock_items = StockItem.objects.all()
     return render(request, 'stock_view.html', {'stock_item':stock_items})
 
-#had to change auth decorator to use it class based view!
+@login_required
+@manager_required
+def view_journal(request):
+    journal = Journal.objects.all().order_by('-timestamp')
+    return render(request, 'journal.html', {'journal': journal})
+
+#had to change auth decorator to use a class based view!
 @method_decorator(login_required, name='dispatch')
 class RecipeListView(ListView):
     model = Recipe
@@ -52,6 +57,7 @@ def recipe_detail(request, pk):
 
 @login_required
 @manager_required
+@register_activity
 def create_recipe(request):
     if request.method == 'POST':
         # Create a RecipeForm instance from the POST data
@@ -81,6 +87,7 @@ def create_recipe(request):
 
 @login_required
 @manager_required
+@register_activity
 def update_recipe(request, pk):
     recipe = get_object_or_404(Recipe, pk=pk)
     if request.method == 'POST':
@@ -94,6 +101,7 @@ def update_recipe(request, pk):
 
 @login_required
 @manager_required
+@register_activity
 def delete_recipe(request, pk):
     recipe = get_object_or_404(Recipe, pk=pk)
     if request.method == 'POST':
@@ -105,6 +113,7 @@ def delete_recipe(request, pk):
 @login_required
 @manager_required
 @production_required
+@register_activity
 def production_view(request):
     if request.method == 'POST':
         recipe_id = request.POST['recipe']
@@ -162,6 +171,8 @@ def create_production(recipe, recipe_ingredients, quantity_produced, produced_by
     if recipe.is_base:
         add_base_to_inventory(recipe, quantity_produced)
 
+
+
 def add_base_to_inventory(recipe, quantity_produced):
     # Create the base ingredient
     base_ingredient, created = Ingredient.objects.get_or_create(
@@ -181,21 +192,10 @@ def add_base_to_inventory(recipe, quantity_produced):
         inventory_entry.save()
 
 
-def update_stock(recipe, production, produced_by):
-    # Update ice cream stock
-    stock_item, created = StockItem.objects.get_or_create(
-        recipe=recipe,
-        size=production.container_size
-    )
-    stock_item.quantity += production.quantity_produced
-    stock_item.added_by = produced_by
-    stock_item.save()
-
-
-
 @receiver(post_save, sender=IceCreamProduction)
-def update_stock_on_production(sender, instance, created, **kwargs):
+def update_stock(sender, instance, created, **kwargs):
     if created:
+        # Update ice cream stock
         stock_item, created = StockItem.objects.get_or_create(
             recipe=instance.recipe,
             size=instance.container_size
@@ -207,6 +207,7 @@ def update_stock_on_production(sender, instance, created, **kwargs):
 @login_required
 @manager_required
 @service_required
+@register_activity
 def stock_takeout_view(request):
     if request.method == 'POST':
         stock_item_id = request.POST['stock_item']
@@ -237,6 +238,7 @@ def stock_takeout_view(request):
 @login_required
 @manager_required
 @service_required
+@register_activity
 def add_ingredient(request):
     if request.method == 'POST':
         ingredient_name = request.POST['ingredient_name']
@@ -279,6 +281,7 @@ def add_to_inventory(ingredient, quantity):
     if not created:
         inventory_entry.quantity += quantity
         inventory_entry.save()
+
 
 def register_ingredient_incoming(ingredient, quantity, lot_number, unit_weight, expiration_date, temperature, observations, received_by):
     # Register for IngredientIncoming

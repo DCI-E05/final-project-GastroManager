@@ -3,6 +3,13 @@ from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import  AbstractUser 
 
+class Journal(models.Model):
+    user = models.ForeignKey(get_user_model(), on_delete=models.SET_NULL, null=True)
+    action = models.CharField(max_length=255)
+    timestamp = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.timestamp} - {self.user} - {self.action}"
 
 class Address(models.Model):
     line_1 = models.CharField(max_length=255, verbose_name="Address Line 1")

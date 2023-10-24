@@ -1,5 +1,6 @@
 from functools import wraps
 from django.http import HttpResponseForbidden
+from .models import Journal
 
 def manager_required(view_func):
     @wraps(view_func)
@@ -33,3 +34,19 @@ def production_required(view_func):
             return HttpResponseForbidden("No access")
 
     return _wrapped_view
+
+
+def register_activity(action_name): #as the name says, this will register all selected functions in views.py
+    def decorator(view_func):
+        @wraps(view_func)
+        def _wrapped_view(request, *args, **kwargs):
+            # does function logic
+            response = view_func(request, *args, **kwargs)
+
+            # Register action in model "Journal"
+            Journal.objects.create(user=request.user, action=action_name)
+
+            return response
+
+        return _wrapped_view
+    return decorator
