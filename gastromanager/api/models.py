@@ -1,10 +1,12 @@
-from django.db import models
-from django.conf import settings
-from django.contrib.auth import get_user_model
-from django.contrib.auth.models import AbstractUser
 from datetime import datetime
 from PIL import Image, ImageDraw, ImageFont
 import qrcode
+
+from django.conf import settings
+from django.db import models
+from django.contrib.auth import get_user_model
+from django.contrib.auth.models import AbstractUser
+
 
 
 class Journal(models.Model):
@@ -84,7 +86,7 @@ class EmployeeBadge(models.Model):
         badge.paste(logo, (45, 20))
 
         file_name = f"{self.employee_name.replace(' ', '_')}_Badge.png"
-        badge.save(file_name)
+        badge.save(f"api/badges/{file_name}")
 
         return file_name
 
