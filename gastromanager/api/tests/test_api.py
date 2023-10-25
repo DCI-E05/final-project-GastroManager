@@ -399,6 +399,7 @@ class EmployeeBadgeTest(TestCase):
         badge_file = employee.generate_badge()
 
         self.assertIsNotNone(badge_file)
+        os.remove(badge_file)
 
         logo_path = "api/media/green_scoop.png"
         self.assertTrue(os.path.isfile(logo_path))
