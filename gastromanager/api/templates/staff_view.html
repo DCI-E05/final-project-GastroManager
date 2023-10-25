@@ -25,8 +25,7 @@
             <input type="hidden" name="user_id" value="{{ user.id }}">
             <button type="submit" name="delete_user" class="btn btn-danger">Delete User</button>
           </form>
+          <a href="{% url 'edit_profile' user.id %}" class="btn btn-primary">Edit Profile</a>
         </li>
       {% endfor %}
     </ul>
-  </div>
-{% endblock %}

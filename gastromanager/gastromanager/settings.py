@@ -10,10 +10,9 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 
+import os
 from pathlib import Path
 from dotenv import load_dotenv
-import os
-from django.core.wsgi import get_wsgi_application
 
 # Set the DJANGO_SETTINGS_MODULE environment variable
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "gastromanager.settings")
@@ -38,6 +37,7 @@ DEBUG = True
 
 ALLOWED_HOSTS = []
 
+AUTH_USER_MODEL = "api.UserProfile" #for using AbstractUser
 
 # Application definition
 
@@ -52,10 +52,9 @@ INSTALLED_APPS = [
 
 ]
 
-AUTH_USER_MODEL = 'api.UserProfile' #for using AbstractUser
+LOGIN_REDIRECT_URL = 'welcome' #after log-in.
 
-
-LOGIN_URL = 'blank_login' #for not authorizade users. we need to make sure that the 'blank_login' is the same as in urls.py form api app.
+LOGIN_URL = '' 
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
@@ -72,7 +71,7 @@ ROOT_URLCONF = "gastromanager.urls"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [],
+        "DIRS": [os.path.join(BASE_DIR, "templates")],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [

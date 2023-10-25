@@ -1,7 +1,7 @@
 
 from django.shortcuts import render, redirect, get_object_or_404
-from .models import UserProfile,Recipe, Ingredient, IngredientInventory, IngredientIncoming, RecipeIngredient, IceCreamProduction, StockItem, IceCreamStockTakeOut, Journal 
-from .forms import RecipeForm, ProductionCalculatorForm, CustomUserForm, IngredientInventoryUpdateForm
+from .models import UserProfile, Recipe, Ingredient, IngredientInventory, IngredientIncoming, RecipeIngredient, IceCreamProduction, StockItem, IceCreamStockTakeOut, Journal 
+from .forms import RecipeForm, ProductionCalculatorForm, CustomUserForm, IngredientInventoryUpdateForm, CustomUserNormalForm
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.views.generic import ListView
@@ -14,6 +14,11 @@ from .decorators import manager_required, service_required, production_required,
 from django.utils.decorators import method_decorator
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError 
+from django.http import Http404
+from django.contrib.auth import logout
+from django.urls import reverse
+
+
 
 
 
@@ -22,45 +27,42 @@ RecipeIngredientFormSet = modelformset_factory(RecipeIngredient, fields=('ingred
 
 @login_required
 def welcome_page(request):
-    # Ges access level from user
-    user_level = request.user.userprofile.level
+    # Get access level from user
+    user_level = request.user.level
 
     # Dictionary with options depending on acces level.
     options = {
-    "Manager": {
-        "Edit Profile": "edit_profile",
-        "Staff View": "staff_view",
-        "Stock View": "stock_view",
-        "View Journal": "view_journal",
-        "Recipe List": "recipe_list",
-        "Create Recipe": "create_recipe",
-        "Delete Recipe": "delete_recipe",
-        "Production View": "production_view",
-        "Stock Takeout View": "stock_takeout_view",
-        "Add Ingredient": "add_ingredient",
-        "Production Calculator": "production_calculator_view",
-        "Ingredient Inventory": "ingredient_inventory",
-    },
-    "Service": {
-        "Staff View": "staff_view",
-        "Stock View": "stock_view",
-        "Recipe List": "recipe_list",
-        "Stock Takeout View": "stock_takeout_view",
-        "Add Ingredient": "add_ingredient",
-        "Ingredient Inventory": "ingredient_inventory",
+        "Manager": {
+            "Edit Profile": "edit_profile",
+            "Staff View": "staff_view",
+            "Stock View": "stock_view",
+            "View Journal": "view_journal",
+            "Recipe List": "recipe_list",
+            "Production View": "production_view",
+            "Stock Takeout View": "stock_takeout_view",
+            "Add Ingredient": "add_ingredient",
+            "Production Calculator": "production_calculator",
+            "Ingredient Inventory": "ingredient_inventory",
+        },
+        "Service": {
+            "Edit Profile": "edit_profile",
+            "Stock View": "stock_view",
+            "Recipe List": "recipe_list",
+            "Stock Takeout View": "stock_takeout_view",
+            "Add Ingredient": "add_ingredient",
+            "Ingredient Inventory": "ingredient_inventory",
 
-    },
-    "Production": {
-        "Staff View": "staff_view",
-        "Stock View": "stock_view",
-        "Recipe List": "recipe_list",
-        "Recipe Detail": "recipe_detail",
-        "Production View": "production_view",
-        "Production Calculator": "production_calculator_view",
-        "Add Ingredient": "add_ingredient",
-        "Ingredient Inventory": "ingredient_inventory",
+        },
+        "Production": {
+            "Edit Profile": "edit_profile",
+            "Stock View": "stock_view",
+            "Recipe List": "recipe_list",
+            "Production View": "production_view",
+            "Production Calculator": "production_calculator",
+            "Add Ingredient": "add_ingredient",
+            "Ingredient Inventory": "ingredient_inventory",
 
-    },
+        },
 } 
   
     # Get specific option according to acces level. This will be used in the main welcome template.
@@ -79,16 +81,20 @@ def edit_profile(request, user_id=None):
         # If user_id is provided, edit the profile of the specified user
         user = get_object_or_404(get_user_model(), id=user_id)
 
-    # Check if the current user is an admin
+    # Check if the current user is an admin or normal user
     is_admin = request.user.userprofile.level == 'Manager'
+    is_normal_user = request.user == user
 
     if request.method == 'POST':
-        form = CustomUserForm(request.POST, instance=user)
-
+        if is_normal_user:
+            form = CustomUserNormalForm(request.POST, instance=user)
+        else:
+            form = CustomUserForm(request.POST, instance=user)
+        
         if form.is_valid():
             form.save()
             if is_admin:
-                return redirect('manage_users')
+                return redirect('staff')
             else:
                 return redirect('edit_profile')
 
@@ -133,6 +139,7 @@ def view_journal(request):
     journal = Journal.objects.all().order_by('-timestamp')
     return render(request, 'journal.html', {'journal': journal})
 
+
 #had to change auth decorator to use a class based view!
 @method_decorator(login_required, name='dispatch')
 class RecipeListView(ListView):
@@ -151,42 +158,6 @@ class RecipeListView(ListView):
 def recipe_detail(request, pk):
     recipe = get_object_or_404(Recipe, pk=pk)
     return render(request, 'recipe_detail.html', {'recipe': recipe})
-
-@login_required
-@manager_required
-@register_activity
-def create_recipe(request):
-    if request.method == 'POST':
-        form = RecipeForm(request.POST)
-
-        if form.is_valid():
-            recipe = form.save()
-
-            # Check if a new ingredient is being added to the recipe
-            new_ingredient_name = form.cleaned_data.get('new_ingredient_name')
-            new_ingredient_quantity = form.cleaned_data.get('new_ingredient_quantity')
-
-            if new_ingredient_name and new_ingredient_quantity:
-                # Create a new ingredient if it doesn't exist
-                new_ingredient, created = Ingredient.objects.get_or_create(
-                    name=new_ingredient_name,
-                    defaults={'unit_of_measurement': Ingredient.GRAMS}
-                )
-
-                # Add the new ingredient to the recipe
-                RecipeIngredient.objects.create(
-                    recipe=form.instance,
-                    ingredient=new_ingredient,
-                    quantity=new_ingredient_quantity
-                )
-
-
-            return redirect('recipe_detail', pk=recipe.pk)
-    else:
-        # Create a form to render the recipe form
-        form = RecipeForm()
-
-    return render(request, 'create_recipe.html', {'form': form})
 
 # This view allows a manager to update an existing recipe.
 @login_required
@@ -225,18 +196,62 @@ def update_recipe(request, pk):
         # Create a form to render the recipe form with the existing data
         form = RecipeForm(instance=recipe)
 
-    return render(request, 'create_recipe.html', {'form': form})
+    return render(request, 'update_recipe.html', {'form': form})
+
 
 
 @login_required
 @manager_required
 @register_activity
 def delete_recipe(request, pk):
-    recipe = get_object_or_404(Recipe, pk=pk)
+    try:
+        recipe = Recipe.objects.get(pk=pk)
+    except Recipe.DoesNotExist:
+        raise Http404("Recipe does not exist")
+
     if request.method == 'POST':
         recipe.delete()
         return redirect('recipe_list')
+
     return render(request, 'delete_recipe.html', {'recipe': recipe})
+
+
+@login_required
+@manager_required
+@register_activity
+def create_recipe(request):
+    if request.method == 'POST':
+        form = RecipeForm(request.POST)
+
+        if form.is_valid():
+            recipe = form.save()
+
+            # Check if a new ingredient is being added to the recipe
+            new_ingredient_name = form.cleaned_data.get('new_ingredient_name')
+            new_ingredient_quantity = form.cleaned_data.get('new_ingredient_quantity')
+
+            if new_ingredient_name and new_ingredient_quantity:
+                # Create a new ingredient if it doesn't exist
+                new_ingredient, created = Ingredient.objects.get_or_create(
+                    name=new_ingredient_name,
+                    defaults={'unit_of_measurement': Ingredient.GRAMS}
+                )
+
+                # Add the new ingredient to the recipe
+                RecipeIngredient.objects.create(
+                    recipe=form.instance,
+                    ingredient=new_ingredient,
+                    quantity=new_ingredient_quantity
+                )
+
+
+            return redirect('recipe_detail', pk=recipe.pk)
+    else:
+        # Create a form to render the recipe form
+        form = RecipeForm()
+
+    return render(request, 'create_recipe.html', {'form': form})
+
 
 
 @login_required
@@ -247,6 +262,7 @@ def production_view(request):
     if request.method == 'POST':
         recipe_id = request.POST['recipe']
         quantity_produced = request.POST['quantity_produced']
+        container_size = request.POST['container_size']  
         produced_by = request.user
 
         recipe = Recipe.objects.get(pk=recipe_id)
@@ -254,10 +270,10 @@ def production_view(request):
 
         try:
             # Check ingredient availability in inventory, and catch any ValidationErrors
-            check_ingredient_availability(recipe_ingredients, quantity_produced)
+            check_ingredient_availability(recipe_ingredients, quantity_produced, container_size)
 
             # Create production
-            production = create_production(recipe, recipe_ingredients, quantity_produced, produced_by)
+            production = create_production(recipe, container_size, recipe_ingredients, quantity_produced, produced_by)
 
             # Check if the recipe is marked as a base
             if recipe.is_base:
@@ -275,9 +291,9 @@ def production_view(request):
 @login_required
 @manager_required
 @production_required
-def check_ingredient_availability(recipe_ingredients, quantity_produced):
+def check_ingredient_availability(recipe_ingredients, quantity_produced, container_size):
     for recipe_ingredient in recipe_ingredients:
-        required_quantity = float(recipe_ingredient.quantity) * float(quantity_produced)
+        required_quantity = float(recipe_ingredient.quantity) * quantity_produced * container_size
         inventory = recipe_ingredient.ingredient.inventory
 
         if inventory.quantity < required_quantity:
@@ -287,23 +303,57 @@ def check_ingredient_availability(recipe_ingredients, quantity_produced):
 @manager_required
 @production_required
 @register_activity
-def create_production(recipe, recipe_ingredients, quantity_produced, produced_by):
-    # Create production
-    production = IceCreamProduction.objects.create(
-        recipe=recipe,
-        quantity_produced=quantity_produced,
-        produced_by=produced_by
-    )
+def create_production(recipe, container_size, recipe_ingredients, quantity_produced, produced_by):
+    # Check if the recipe is marked as a base
+    if recipe.is_base:
+        # For base recipes, we treat them as a single ingredient
+        # Calculate the total quantity required based on quantity produced
+        total_quantity_required = quantity_produced
+
+        # Create production
+        production = IceCreamProduction.objects.create(
+            recipe=recipe,
+            quantity_produced=quantity_produced,
+            produced_by=produced_by
+        )
+
+        # Update inventory for the base (recipe itself)
+        base_ingredient, created = Ingredient.objects.get_or_create(
+            name=recipe.flavor,
+            defaults={'unit_of_measurement': Ingredient.GRAMS}
+        )
+
+        base_ingredient.inventory.quantity += total_quantity_required
+        base_ingredient.inventory.save()
+    else:
+        # If it's not a base, then we consider the container size
+        # Obtain the quantity factor based on the selected container size
+        if container_size == 0.5:
+            quantity_factor = 0.5
+        elif container_size == 3:
+            quantity_factor = 3
+        elif container_size == 6:
+            quantity_factor = 6
+        else:
+            raise ValueError("Invalid container size selected")
+
+        # Calculate the total quantity required based on quantity factor and quantity produced
+        total_quantity_required = quantity_factor * quantity_produced
+
+        # Create production
+        production = IceCreamProduction.objects.create(
+            recipe=recipe,
+            container_size=container_size,
+            quantity_produced=quantity_produced,
+            produced_by=produced_by
+        )
 
     # Update ingredient inventory
     for recipe_ingredient in recipe_ingredients:
-        required_quantity = float(recipe_ingredient.quantity) * float(quantity_produced)
+        required_quantity = float(recipe_ingredient.quantity) * total_quantity_required
         inventory = recipe_ingredient.ingredient.inventory
         inventory.quantity -= required_quantity
         inventory.save()
-    # Check if the recipe is marked as a base
-    if recipe.is_base:
-        add_base_to_inventory(recipe, quantity_produced)
 
 
 
@@ -366,7 +416,7 @@ def stock_takeout_view(request):
             moved_by=moved_by
         )
 
-        return redirect('take_out_ice_cream')
+        return redirect('stock_takeout_view')
 
 
 @login_required
@@ -446,6 +496,7 @@ def ingredient_inventory_view(request):
 
     return render(request, 'ingredient_inventory.html', {'ingredients_inventory': ingredients_inventory, 'form': form})
 
+
 @login_required
 @manager_required
 @production_required
@@ -453,25 +504,83 @@ def production_calculator_view(request):
     if request.method == 'POST':
         form = ProductionCalculatorForm(request.POST)
         if form.is_valid():
-            recipe = form.cleaned_data['recipe']
-            desired_quantity = form.cleaned_data['desired_quantity']
+            recipes = form.cleaned_data['recipes']
+            desired_quantities = form.cleaned_data['desired_quantities']
             
-            # Make calculations and check availability
+            # Parse desired quantities and recipes
+            desired_quantities = [float(q.strip()) for q in desired_quantities.split(',')]
+            
+            # Dictionary to store ingredient quantities
+            total_ingredient_quantities = {}
+            
             try:
-                calculate_production(recipe, desired_quantity)
+                # Calculate and check availability for each recipe
+                for recipe, desired_quantity in zip(recipes, desired_quantities):
+                    calculate_production(recipe, desired_quantity, total_ingredient_quantities)
             except ValidationError as e:
                 form.add_error(None, e)
             else:
+                # Total quantities calculation is successful
                 print("Calculations done correctly")
+                print(total_ingredient_quantities)
 
     else:
         form = ProductionCalculatorForm()
 
     return render(request, 'production_calculator.html', {'form': form})
 
-# function to calculate depending on inventary
-def calculate_production(recipe, desired_quantity):
+def calculate_production(recipe, desired_quantity, total_ingredient_quantities):
     recipe_ingredients = RecipeIngredient.objects.filter(recipe=recipe)
 
-    check_ingredient_availability(recipe_ingredients, desired_quantity)
+    for recipe_ingredient in recipe_ingredients:
+        # Get the ingredient and its quantity in the recipe
+        ingredient = recipe_ingredient.ingredient
+        quantity_in_recipe = float(recipe_ingredient.quantity)  # Quantity per kg
 
+        # Calculate the total quantity needed based on the desired quantity
+        total_quantity_needed = quantity_in_recipe * desired_quantity
+
+        # Update or initialize the total_ingredient_quantities dictionary
+        if ingredient.id in total_ingredient_quantities:
+            total_ingredient_quantities[ingredient.id] += total_quantity_needed
+        else:
+            total_ingredient_quantities[ingredient.id] = total_quantity_needed
+
+        # Check ingredient availability in inventory
+        check_inventory_availability(ingredient, total_quantity_needed)
+
+        # Check if the recipe's base ingredients need to be added
+        if recipe.is_base:
+            add_base_ingredients(recipe, desired_quantity, total_ingredient_quantities)
+
+# Function to check if base ingredients need to be added
+def add_base_ingredients(recipe, desired_quantity, total_ingredient_quantities):
+    for base_ingredient in recipe.base_ingredients.all():
+        # Get the base ingredient's quantity in the recipe
+        recipe_ingredient = base_ingredient.recipeingredient_set.get(recipe=recipe)
+        quantity_in_recipe = float(recipe_ingredient.quantity)  # Quantity per kg
+
+        # Calculate the total quantity needed based on the desired quantity
+        total_quantity_needed = quantity_in_recipe * desired_quantity
+
+        # Update or initialize the total_ingredient_quantities dictionary for base ingredients
+        if base_ingredient.id in total_ingredient_quantities:
+            total_ingredient_quantities[base_ingredient.id] += total_quantity_needed
+        else:
+            total_ingredient_quantities[base_ingredient.id] = total_quantity_needed
+
+        # Check ingredient availability in inventory
+        check_inventory_availability(base_ingredient, total_quantity_needed)    
+
+# Function to verify inventory availability
+def check_inventory_availability(ingredient, total_quantity_needed):
+    inventory = ingredient.inventory
+
+    if inventory.quantity < total_quantity_needed:
+        raise ValidationError(f"Ingredient {ingredient.name} is not available in sufficient quantity. Current quantity: {inventory.quantity} kg, Required quantity: {total_quantity_needed} kg")
+
+
+
+def custom_logout(request):
+    logout(request)
+    return redirect("/")

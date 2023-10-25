@@ -5,6 +5,7 @@ from django.core.exceptions import ValidationError
 
 
 
+
 class RecipeForm(forms.ModelForm):
     class Meta:
         model = Recipe
@@ -39,22 +40,26 @@ class RecipeForm(forms.ModelForm):
     )
 
 class ProductionCalculatorForm(forms.Form):
-    recipe = forms.ModelChoiceField(
+    recipes = forms.ModelMultipleChoiceField(
         queryset=Recipe.objects.all(),
-        label='Seleccet a recipe'
+        widget=forms.CheckboxSelectMultiple,
+        label="Select Recipes for Production"
+    )
+    desired_quantities = forms.CharField(
+        label='Desired Quantities (kg)', 
+        help_text='Enter the desired quantities for the selected recipes, separated by commas'
     )
     
-    desired_quantity = forms.DecimalField(
-        label='Desire amount (grams or units)',
-        widget=forms.TextInput(attrs={'placeholder': 'Enter desire amount'}),
-    )
 
-
-class CustomUserForm(UserChangeForm):
+class CustomUserForm(UserChangeForm): #for manager
     class Meta:
         model = UserProfile
         fields = ('username', 'password', 'first_name', 'last_name', 'email', 'date_of_birth', 'address', 'phone', 'level', 'is_active', 'is_staff', 'is_superuser')
 
+class CustomUserNormalForm(forms.ModelForm): #for all users
+    class Meta:
+        model = UserProfile
+        fields = ('password', 'first_name', 'last_name', 'email', 'date_of_birth', 'address', 'phone',)
 
 # Ingredient Inventory Update Form
 class IngredientInventoryUpdateForm(forms.ModelForm):
