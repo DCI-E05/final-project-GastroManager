@@ -3,6 +3,8 @@ from django.views.generic import TemplateView
 from . import views
 from .views import RecipeListView
 
+app_name = 'api'
+
 urlpatterns = [
     path(
         "blank-login/",
@@ -24,11 +26,13 @@ urlpatterns = [
         name="production_calculator",
     ),
     path("staff_members/", views.staff_member_list, name="staff_member_list"),
-    path(
-        "working_hours/<int:staff_member_id>/",
-        views.working_hours_list,
-        name="working_hours_list",
-    ),
+    # TODO: working_hours_list dose not exists ???
+    # path(
+    #     "working_hours/<int:staff_member_id>/",
+    #     views.working_hours_list,
+    #     name="working_hours_list",
+    # ),
     path("scan/", views.scan_qr_code, name="scan_qr_code"),
     path("badge/", views.generate_employee_badge, name="badge_maker"),
+    path("working_hours/<int:staff_member_id>/", views.working_hours_list, name="working_hours_list",),
 ]

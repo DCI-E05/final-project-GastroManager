@@ -457,7 +457,7 @@ def scan_qr_code(request):
 
 def staff_member_list(request):
     staff_members = UserProfile.objects.all()
-    data = [{"name": staff.name, "email": staff.email} for staff in staff_members]
+    data = [{"name": staff.username, "email": staff.email} for staff in staff_members]
     return JsonResponse(data, safe=False)
 
 
@@ -470,7 +470,7 @@ def generate_employee_badge(request):
 
         # Generate the badge for the selected employee
         badge = EmployeeBadge(
-            employee_name=selected_employee.name, employee_id=selected_employee.id
+            employee_name=selected_employee.username, employee_id=selected_employee.id
         )
         file_name = badge.generate_badge()
 
@@ -479,10 +479,25 @@ def generate_employee_badge(request):
                 response = HttpResponse(
                     badge_file.read(), content_type="application/pdf"
                 )
-                response["Content-Disposition"] = f'attachment; filename="{file_name.replace("api/badges/", "")}"'
+                response[
+                    "Content-Disposition"
+                ] = f'attachment; filename="{file_name.replace("api/badges/", "")}"'
                 os.remove(file_name)
                 return response
         else:
             return HttpResponse("Badge not generated.")
 
     return render(request, "api/employee_list.html", {"employees": employees})
+
+def working_hours_list(request, staff_member_id):
+    working_hours = WorkingHours.objects.filter(employee_id=staff_member_id)
+    data = [
+        {
+            "clock_in": wh.clock_in,
+            "clock_out": wh.clock_out,
+            "recorded_time": wh.recorded_time(),
+        }
+        for wh in working_hours
+    ]
+    return JsonResponse(data, safe=False)
+
