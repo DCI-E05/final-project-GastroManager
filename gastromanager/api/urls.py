@@ -26,7 +26,7 @@ urlpatterns = [
         name="production_calculator",
     ),
     path("staff_members/", views.staff_member_list, name="staff_member_list"),
-    # TODO: working_hours_list dose not exists ???
+    # TODO: working_hours_list dose not exists
     # path(
     #     "working_hours/<int:staff_member_id>/",
     #     views.working_hours_list,

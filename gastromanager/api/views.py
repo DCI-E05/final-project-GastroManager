@@ -405,6 +405,7 @@ def generate_employee_badge(request):
     return render(request, "api/employee_list.html", {"employees": employees})
 
 
+@register_activity("Scan QR Code")
 def scan_qr_code(request):
     cap = cv2.VideoCapture(0)
 
@@ -488,6 +489,7 @@ def generate_employee_badge(request):
             return HttpResponse("Badge not generated.")
 
     return render(request, "api/employee_list.html", {"employees": employees})
+
 
 def working_hours_list(request, staff_member_id):
     working_hours = WorkingHours.objects.filter(employee_id=staff_member_id)
