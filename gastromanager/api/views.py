@@ -1,4 +1,5 @@
 from datetime import datetime
+import os
 
 import cv2
 from pyzbar.pyzbar import decode
@@ -478,7 +479,8 @@ def generate_employee_badge(request):
                 response = HttpResponse(
                     badge_file.read(), content_type="application/pdf"
                 )
-                response["Content-Disposition"] = f'attachment; filename="{file_name}"'
+                response["Content-Disposition"] = f'attachment; filename="{file_name.replace("api/badges/", "")}"'
+                os.remove(file_name)
                 return response
         else:
             return HttpResponse("Badge not generated.")
