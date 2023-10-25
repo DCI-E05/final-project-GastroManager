@@ -3,7 +3,7 @@ from django.views.generic import TemplateView
 from . import views
 from .views import RecipeListView
 
-app_name = 'api'
+app_name = "api"
 
 urlpatterns = [
     path(
@@ -34,5 +34,9 @@ urlpatterns = [
     # ),
     path("scan/", views.scan_qr_code, name="scan_qr_code"),
     path("badge/", views.generate_employee_badge, name="badge_maker"),
-    path("working_hours/<int:staff_member_id>/", views.working_hours_list, name="working_hours_list",),
+    path(
+        "working_hours/<int:staff_member_id>/",
+        views.working_hours_list,
+        name="working_hours_list",
+    ),
 ]

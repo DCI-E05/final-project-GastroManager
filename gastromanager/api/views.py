@@ -7,9 +7,8 @@ from pyzbar.pyzbar import decode
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ValidationError
-from django.db import transaction, models
+from django.db import transaction
 from django.db.models.signals import post_save
-from django.db.models import F
 from django.dispatch import receiver
 from django.forms import modelformset_factory
 from django.http import JsonResponse, HttpResponse
@@ -388,23 +387,6 @@ def calculate_production(recipe, desired_quantity):
     check_ingredient_availability(recipe_ingredients, desired_quantity)
 
 
-def generate_employee_badge(request):
-    employees = UserProfile.objects.all()
-
-    if request.method == "POST":
-        employee_id = request.POST["employee_id"]
-        selected_employee = UserProfile.objects.get(id=employee_id)
-
-        # Generate the badge for the selected employee
-        badge = EmployeeBadge(
-            employee_name=selected_employee.name, employee_id=selected_employee.id
-        )
-        file_name = badge.generate_badge()
-        return render(request, "api/badge_generated.html", {"file_name": file_name})
-
-    return render(request, "api/employee_list.html", {"employees": employees})
-
-
 @register_activity("Scan QR Code")
 def scan_qr_code(request):
     cap = cv2.VideoCapture(0)
@@ -502,4 +484,3 @@ def working_hours_list(request, staff_member_id):
         for wh in working_hours
     ]
     return JsonResponse(data, safe=False)
-

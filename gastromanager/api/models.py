@@ -153,9 +153,8 @@ class IngredientInventory(models.Model):
             inventory_entry.save()
 
 
-class IngredientIncoming(
-    models.Model
-):  #  model represents incoming ingredients in the shop.
+class IngredientIncoming(models.Model):
+    #  model represents incoming ingredients in the shop.
     GRAMS = "grams"
     UNITS = "units"
     UNIT_CHOICES = [

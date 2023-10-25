@@ -1,9 +1,13 @@
 import pytest
-from datetime import datetime
+from datetime import timedelta
+import os
+
+from django.utils import timezone
 from django.test import Client, TestCase
 from django.core.exceptions import ValidationError
 from django.urls import reverse
 from django.contrib.auth import get_user_model
+
 from api.forms import RecipeForm, ProductionCalculatorForm
 from api.models import (
     Ingredient,
@@ -16,6 +20,7 @@ from api.models import (
     IngredientIncoming,
     UserProfile,
     WorkingHours,
+    EmployeeBadge,
 )
 
 
@@ -386,23 +391,49 @@ def test_insufficient_stock_takeout(create_stock_item, create_user, client):
     # This test checks that attempting to take more stock quantity than what is available raises a validation error.
 
 
-class StaffMemberModelTests(TestCase):
-    def test_create_staff_member(self):
-        staff_member = UserProfile.objects.create(name="John Doe", email="john@example.com")
-        self.assertEqual(staff_member.name, "John Doe")
-        self.assertEqual(staff_member.email, "john@example.com")
+class EmployeeBadgeTest(TestCase):
+    def test_generate_badge(self):
+        employee = EmployeeBadge(employee_name="John Doe", employee_id=12345)
+        employee.save()
 
-class WorkingHoursModelTests(TestCase):
+        badge_file = employee.generate_badge()
+
+        self.assertIsNotNone(badge_file)
+
+        logo_path = "api/media/green_scoop.png"
+        self.assertTrue(os.path.isfile(logo_path))
+
+        employee.delete()
+
+
+class WorkingHoursTest(TestCase):
+    def setUp(self):
+        self.user_profile = UserProfile.objects.create(
+            username="testuser", password="password"
+        )
+
     def test_recorded_time(self):
-        staff_member = UserProfile.objects.create(name="John Doe", email="john@example.com")
-        clock_in = datetime(2023, 1, 1, 8, 0, 0)
-        clock_out = datetime(2023, 1, 1, 17, 0, 0)
-        working_hours = WorkingHours.objects.create(employee=staff_member, clock_in=clock_in, clock_out=clock_out)
+        clock_in_time = timezone.now() - timedelta(hours=2)
+        clock_out_time = timezone.now()
+        working_hours = WorkingHours.objects.create(
+            employee=self.user_profile,
+            clock_in=clock_in_time,
+            clock_out=clock_out_time,
+        )
 
-        # Calculate the expected recorded time
-        time_difference = clock_out - clock_in
+        time_difference = clock_out_time - clock_in_time
         hours, remainder = divmod(time_difference.seconds, 3600)
         minutes, seconds = divmod(remainder, 60)
-        expected_time = f"{time_difference.days} days {hours} hours {minutes} minutes {seconds} sec"
+        expected_time = f"{time_difference.days} days {hours} hours {minutes} minutes {seconds} seconds"
 
         self.assertEqual(working_hours.recorded_time(), expected_time)
+
+    def test_recorded_time_when_clock_out_is_none(self):
+        clock_in_time = timezone.now() - timedelta(hours=2)
+        working_hours = WorkingHours.objects.create(
+            employee=self.user_profile,
+            clock_in=clock_in_time,
+            clock_out=None,
+        )
+
+        self.assertIsNone(working_hours.recorded_time())
