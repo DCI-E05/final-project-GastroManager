@@ -428,7 +428,7 @@ def scan_qr_code(request):
                     last_clock_in.clock_out = datetime.now()
                     last_clock_in.save()
                     return HttpResponse(
-                        f"Staff Member: {staff_member.name} - Clocked Out at {last_clock_in.clock_out}"
+                        f"Staff Member: {staff_member.username} - Clocked Out at {last_clock_in.clock_out}"
                     )
                 except WorkingHours.DoesNotExist:
                     # clock them in
@@ -437,7 +437,7 @@ def scan_qr_code(request):
                     )
                     working_hours.save()
                     return HttpResponse(
-                        f"Staff Member: {staff_member.name} - Clocked In at {working_hours.clock_in}"
+                        f"Staff Member: {staff_member.username} - Clocked In at {working_hours.clock_in}"
                     )
 
             except UserProfile.DoesNotExist:

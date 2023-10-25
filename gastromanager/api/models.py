@@ -23,7 +23,6 @@ class Address(models.Model):
 
 
 class UserProfile(AbstractUser):
-    name = models.CharField(max_length=100, default=" ")
     date_of_birth = models.DateField(null=True)
     address = models.ForeignKey(Address, on_delete=models.CASCADE, null=True)
     phone = models.CharField(max_length=255)
