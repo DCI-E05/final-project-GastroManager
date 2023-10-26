@@ -3,7 +3,7 @@ from . import views
 
 
 urlpatterns = [
-    path("welcome/", views.welcome_page, name="welcome"),  
+    path("welcome/", views.welcome_page, name="welcome"),
     path("staff/", views.staff_view, name="staff_view"),
     path("stock/", views.stock_view, name="stock_view"),
     path("journal/", views.view_journal, name="view_journal"),
@@ -15,9 +15,16 @@ urlpatterns = [
     path("production/", views.production_view, name="production_view"),
     path("stock-takeout/", views.stock_takeout_view, name="stock_takeout_view"),
     path("add-ingredient/", views.add_ingredient, name="add_ingredient"),
-    path("production-calculator/", views.production_calculator_view, name="production_calculator"),
+    path(
+        "production-calculator/",
+        views.production_calculator_view,
+        name="production_calculator",
+    ),
     path("edit-profile/", views.edit_profile, name="edit_profile"),
-    path("ingredient-inventory/", views.ingredient_inventory_view, name="ingredient_inventory"),
+    path(
+        "ingredient-inventory/",
+        views.ingredient_inventory_view,
+        name="ingredient_inventory",
+    ),
     path("logout/", views.custom_logout, name="custom_logout"),
-
 ]

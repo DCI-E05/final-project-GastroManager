@@ -3,21 +3,34 @@
 {% block content %}
     <div class="container">
         <div class="row mt-5">
-            <div class="col">
+            <div class="col text-center">
                 <h1>Welcome, {{ user }}</h1>
             </div>
         </div>
         <div class="row mt-3">
-            <div class="col">
+            <div class="col text-center">
                 <h2>Your options for {{ user_level }} are:</h2>
-                <ul class="list-group">
+                <ul class="list-group centered-list">
                     {% for option, url_name in user_options.items %}
                         <li class="list-group-item">
-                            <a href="{% url url_name %}">{{ option }}</a>
+                            <a href="{% url url_name %}" class="btn btn-primary btn-lg">{{ option }}</a>
                         </li>
                     {% endfor %}
                 </ul>
             </div>
         </div>
     </div>
+</div>
+
+<style>
+    .centered-list {
+        max-width: 400px;
+        margin: 0 auto;
+    }
+
+    .list-group-item {
+        text-align: center;
+        margin-top: 10px;
+    }
+</style>
 {% endblock %}
