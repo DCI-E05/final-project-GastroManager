@@ -92,7 +92,7 @@ def welcome_page(request):
 
 
 @login_required
-@register_activity
+#@register_activity("Edit Profile")
 def edit_profile(request, user_id=None):
     if request.method == "GET":
         pass
@@ -135,11 +135,9 @@ def edit_profile(request, user_id=None):
     return render(request, "edit_profile.html", {"form": form, "user": user})
 
 
-login_required
-
-
-@manager_required
-@register_activity
+@login_required
+#@manager_required
+#@register_activity
 def staff_view(request):
     staff = UserProfile.objects.first()
     user_form = CustomUserForm()
@@ -174,7 +172,7 @@ def stock_view(request):
 
 
 @login_required
-@manager_required
+#@manager_required
 def view_journal(request):
     journal = Journal.objects.all().order_by("-timestamp")
     return render(request, "journal.html", {"journal": journal})
@@ -195,8 +193,8 @@ class RecipeListView(ListView):
 
 # View for displaying recipe details
 @login_required
-@manager_required
-@production_required
+#@manager_required
+#@production_required
 def recipe_detail(request, pk):
     recipe = get_object_or_404(Recipe, pk=pk)
     return render(request, "recipe_detail.html", {"recipe": recipe})
@@ -204,8 +202,8 @@ def recipe_detail(request, pk):
 
 # This view allows a manager to update an existing recipe.
 @login_required
-@manager_required
-@register_activity
+#@manager_required
+#@register_activity
 def update_recipe(request, pk):
     recipe = get_object_or_404(Recipe, pk=pk)
 
@@ -242,8 +240,8 @@ def update_recipe(request, pk):
 
 
 @login_required
-@manager_required
-@register_activity
+#@manager_required
+#@register_activity
 def delete_recipe(request, pk):
     try:
         recipe = Recipe.objects.get(pk=pk)
@@ -258,8 +256,8 @@ def delete_recipe(request, pk):
 
 
 @login_required
-@manager_required
-@register_activity
+#@manager_required
+#@register_activity
 def create_recipe(request):
     if request.method == "POST":
         form = RecipeForm(request.POST)
@@ -294,9 +292,9 @@ def create_recipe(request):
 
 
 @login_required
-@manager_required
-@production_required
-@register_activity
+#@manager_required
+#@production_required
+#@register_activity
 def production_view(request):
     if request.method == "POST":
         recipe_id = request.POST["recipe"]
@@ -337,8 +335,8 @@ def production_view(request):
 
 
 @login_required
-@manager_required
-@production_required
+#@manager_required
+#@production_required
 def check_ingredient_availability(
     recipe_ingredients, quantity_produced, container_size
 ):
@@ -355,9 +353,9 @@ def check_ingredient_availability(
 
 
 @login_required
-@manager_required
-@production_required
-@register_activity
+#@manager_required
+#@production_required
+#@register_activity
 def create_production(
     recipe, container_size, recipe_ingredients, quantity_produced, produced_by
 ):
@@ -443,9 +441,9 @@ def update_stock(sender, instance, created, **kwargs):
 
 
 @login_required
-@manager_required
-@service_required
-@register_activity
+#@manager_required
+#@service_required
+#@register_activity
 def stock_takeout_view(request):
     if request.method == "POST":
         stock_item_id = request.POST["stock_item"]
@@ -474,7 +472,7 @@ def stock_takeout_view(request):
 
 
 @login_required
-@register_activity
+#@register_activity
 def add_ingredient(request):
     if request.method == "POST":
         ingredient_name = request.POST["ingredient_name"]
@@ -576,8 +574,8 @@ def ingredient_inventory_view(request):
 
 
 @login_required
-@manager_required
-@production_required
+#@manager_required
+#@production_required
 def production_calculator_view(request):
     if request.method == "POST":
         form = ProductionCalculatorForm(request.POST)

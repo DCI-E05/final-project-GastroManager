@@ -39,6 +39,7 @@ ALLOWED_HOSTS = []
 
 AUTH_USER_MODEL = "api.UserProfile" #for using AbstractUser
 
+
 # Application definition
 
 INSTALLED_APPS = [
