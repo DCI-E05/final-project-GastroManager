@@ -3,7 +3,7 @@
 {% block content %}
   <h2>Ingredient Inventory</h2>
 
-  {% if request.user.userprofile.level == 'Manager' %}
+  {% if request.user.level == 'Manager' %}
     <form method="post">
       {% csrf_token %}
       {{ form.as_p }}

@@ -9,6 +9,10 @@
       {% csrf_token %}
       {{ form.as_p }}
       <button type="submit" class="btn btn-primary">Save Changes</button>
+      
+      {% if user.user.level == 'Manager' %}
+        <a href="{% url 'staff_view' %}" class="btn btn-primary">Staff View</a>
+      {% endif %}
     </form>
   </div>
 </body>

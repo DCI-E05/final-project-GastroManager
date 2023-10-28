@@ -20,7 +20,7 @@ urlpatterns = [
         views.production_calculator_view,
         name="production_calculator",
     ),
-    path("edit-profile/", views.edit_profile, name="edit_profile"),
+    path("edit-profile/<int:user_id>", views.edit_profile, name="edit_profile"),
     path(
         "ingredient-inventory/",
         views.ingredient_inventory_view,

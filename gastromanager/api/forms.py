@@ -1,6 +1,5 @@
 from django import forms
-from .models import Recipe, Ingredient, UserProfile, IngredientInventory
-from django.contrib.auth.forms import UserChangeForm
+from .models import Recipe, Ingredient, UserProfile, IngredientInventory, Address
 from django.core.exceptions import ValidationError
 
 
@@ -52,7 +51,23 @@ class ProductionCalculatorForm(forms.Form):
     )
 
 
-class CustomUserForm(UserChangeForm):  # for manager
+
+class CustomUserForm(forms.ModelForm):
+    password = forms.CharField(
+        label="Password",
+        widget=forms.PasswordInput,
+        required=True,
+        help_text="Enter password for the new user."
+    )
+
+    # Address defined directly in CustomUserForm.
+    line_1 = forms.CharField(max_length=255, label="Address Line 1")
+    line_2 = forms.CharField(max_length=255, label="Address Line 2", required=False)
+    city = forms.CharField(max_length=100)
+    state = forms.CharField(max_length=100, required=False)
+    postal_code = forms.CharField(max_length=20, label="Postal Code")
+    country = forms.CharField(max_length=100)
+
     class Meta:
         model = UserProfile
         fields = (
@@ -62,7 +77,12 @@ class CustomUserForm(UserChangeForm):  # for manager
             "last_name",
             "email",
             "date_of_birth",
-            "address",
+            "line_1", 
+            "line_2",
+            "city",
+            "state",
+            "postal_code",
+            "country",
             "phone",
             "level",
             "is_active",
@@ -70,12 +90,37 @@ class CustomUserForm(UserChangeForm):  # for manager
             "is_superuser",
         )
 
+    def save(self, commit=True):
+        # Save an "Adress Form" in an instance of Address
+        address = Address(
+            line_1=self.cleaned_data.get('line_1'),
+            line_2=self.cleaned_data.get('line_2'),
+            city=self.cleaned_data.get('city'),
+            state=self.cleaned_data.get('state'),
+            postal_code=self.cleaned_data.get('postal_code'),
+            country=self.cleaned_data.get('country')
+        )
+        address.save()
+
+        # Save User and assigne new Address
+        user = super().save(commit=False)
+        user.address = address
+
+        if commit:
+            user.save()
+
+        return user
 
 class CustomUserNormalForm(forms.ModelForm):  # for all users
+
+    new_address = forms.CharField(
+        label="New Address",
+        required=False,
+        help_text="Enter a new address if it doesn't exist in the list."
+    )
     class Meta:
         model = UserProfile
         fields = (
-            "password",
             "first_name",
             "last_name",
             "email",

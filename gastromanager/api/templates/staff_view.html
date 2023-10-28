@@ -2,14 +2,13 @@
 
 {% block content %}
   <div class="container">
-    <h1>Staff View</h1>
-    <p>Welcome to the staff management view. Here, you can manage staff-related tasks.</p>
+    <h1>Staff management</h1>
+    <p>Welcome to the staff management site. Here, you can manage all users.</p>
 
-    <h2>Staff Management</h2>
     <form method="post">
       {% csrf_token %}
       <div class="form-group">
-        <label for="add_user">Add User:</label>
+        <label for="add_user">Create new User:</label>
         {{ user_form.as_p }}
       </div>
       <button type="submit" name="add_user" class="btn btn-primary">Add User</button>
@@ -19,7 +18,7 @@
     <ul>
       {% for user in users %}
         <li>
-          {{ user.username }} - {{ user.email }}
+          {{ user.username }} - {{ user.email }} - {{ user.level }}
           <form method="post" style="display: inline;">
             {% csrf_token %}
             <input type="hidden" name="user_id" value="{{ user.id }}">
@@ -29,3 +28,7 @@
         </li>
       {% endfor %}
     </ul>
+  </div>
+</body>
+</html>
+{% endblock %}

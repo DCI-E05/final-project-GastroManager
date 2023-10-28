@@ -51,32 +51,31 @@ def welcome_page(request):
     # Dictionary with options depending on acces level.
     options = {
         "Manager": {
-            "Edit Profile": "edit_profile",
-            "Staff View": "staff_view",
-            "Stock View": "stock_view",
-            "View Journal": "view_journal",
-            "Recipe List": "recipe_list",
-            "Production View": "production_view",
-            "Stock Takeout View": "stock_takeout_view",
-            "Add Ingredient": "add_ingredient",
+            "Staff Management": "staff_view",
+            "Ice Cream Stock": "stock_view",
+            "Journal": "view_journal",
+            "Recipes": "recipe_list",
+            "Production": "production_view",
+            "Stock Takeout": "stock_takeout_view",
+            "Ingredient Incoming": "add_ingredient",
             "Production Calculator": "production_calculator",
             "Ingredient Inventory": "ingredient_inventory",
         },
         "Service": {
-            "Edit Profile": "edit_profile",
-            "Stock View": "stock_view",
-            "Recipe List": "recipe_list",
-            "Stock Takeout View": "stock_takeout_view",
-            "Add Ingredient": "add_ingredient",
+            "Profile": "edit_profile",
+            "Ice Cream Stock": "stock_view",
+            "Recipes": "recipe_list",
+            "Stock Takeout": "stock_takeout_view",
+            "Ingredient Incoming": "add_ingredient",
             "Ingredient Inventory": "ingredient_inventory",
         },
         "Production": {
-            "Edit Profile": "edit_profile",
-            "Stock View": "stock_view",
-            "Recipe List": "recipe_list",
-            "Production View": "production_view",
+            "Profile": "edit_profile",
+            "Ice Cream Stock": "stock_view",
+            "Recipes": "recipe_list",
+            "Production": "production_view",
             "Production Calculator": "production_calculator",
-            "Add Ingredient": "add_ingredient",
+            "Ingredient Incoming": "add_ingredient",
             "Ingredient Inventory": "ingredient_inventory",
         },
     }
@@ -98,7 +97,7 @@ def edit_profile(request, user_id=None):
         pass
     if user_id is not None:
         # Editing another user's profile
-        if not request.user.userprofile.level == "Manager":
+        if not request.user.level == "Manager":
             # Only administrators can edit other users' profiles
             return HttpResponseForbidden("Forbidden")
 
@@ -117,7 +116,7 @@ def edit_profile(request, user_id=None):
 
         if form.is_valid():
             form.save()
-            if request.user.userprofile.level == "Manager":
+            if request.user.level == "Manager":
                 # If the user is an admin, redirect to 'staff' view
                 return redirect("staff_view")
             else:
@@ -139,14 +138,24 @@ def edit_profile(request, user_id=None):
 #@manager_required
 #@register_activity
 def staff_view(request):
+    if request.user.level != "Manager":
+        return HttpResponseForbidden("Forbidden")
+
     staff = UserProfile.objects.first()
-    user_form = CustomUserForm()
+    user_form = None
 
     if request.method == "POST":
         if "add_user" in request.POST:
             user_form = CustomUserForm(request.POST)
             if user_form.is_valid():
-                user_form.save()
+
+                # Guarda el usuario sin comprometer la contraseña
+                user = user_form.save(commit=False)
+
+                # Establece la contraseña personalizada proporcionada por el administrador
+                password = request.POST.get("password")
+                user.set_password(password)
+                user.save()
                 messages.success(request, "User added successfully.")
                 return redirect("staff_view")
         elif "delete_user" in request.POST:
@@ -154,7 +163,10 @@ def staff_view(request):
             if user_id:
                 user = get_object_or_404(get_user_model(), id=user_id)
                 user.delete()
-                messages.success(request, "User deleted successfully.")
+                messages.success(request, "User deleted successfully")
+    else:
+        # Crea un formulario de creación de usuarios sin el campo de contraseña
+        user_form = CustomUserForm()
 
     users = get_user_model().objects.all()
 
@@ -163,7 +175,6 @@ def staff_view(request):
         "staff_view.html",
         {"staff": staff, "user_form": user_form, "users": users},
     )
-
 
 @login_required
 def stock_view(request):
@@ -554,7 +565,7 @@ def register_ingredient_incoming(
 @login_required
 def ingredient_inventory_view(request):
     ingredients_inventory = IngredientInventory.objects.all()
-    if request.user.userprofile.level == "Manager":  # only manager can make changes.
+    if request.user.level == "Manager":  # only manager can make changes.
         if request.method == "POST":
             # do manual changes en inventory
             form = IngredientInventoryUpdateForm(request.POST)
