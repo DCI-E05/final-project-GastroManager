@@ -1,4 +1,5 @@
 from django.shortcuts import render, redirect, get_object_or_404
+from .activities import activity_staff_view
 from .models import (
     UserProfile,
     Recipe,
@@ -92,9 +93,8 @@ def welcome_page(request):
 
 @login_required
 #@register_activity("Edit Profile")
+@login_required
 def edit_profile(request, user_id=None):
-    if request.method == "GET":
-        pass
     if user_id is not None:
         # Editing another user's profile
         if not request.user.level == "Manager":
@@ -127,7 +127,7 @@ def edit_profile(request, user_id=None):
         # Display the appropriate form based on the user's role
         form = (
             CustomUserForm(instance=user)
-            if request.user == user
+            if request.user.level == "Manager" or user == request.user
             else CustomUserNormalForm(instance=user)
         )
 
@@ -136,22 +136,19 @@ def edit_profile(request, user_id=None):
 
 @login_required
 #@manager_required
-#@register_activity
+@register_activity(activity_staff_view)
 def staff_view(request):
     if request.user.level != "Manager":
         return HttpResponseForbidden("Forbidden")
-
-    staff = UserProfile.objects.first()
+    
+    users = get_user_model().objects.all()
     user_form = None
 
     if request.method == "POST":
         if "add_user" in request.POST:
             user_form = CustomUserForm(request.POST)
             if user_form.is_valid():
-
-                # Guarda el usuario sin comprometer la contraseña
                 user = user_form.save(commit=False)
-
                 # Establece la contraseña personalizada proporcionada por el administrador
                 password = request.POST.get("password")
                 user.set_password(password)
@@ -159,21 +156,26 @@ def staff_view(request):
                 messages.success(request, "User added successfully.")
                 return redirect("staff_view")
         elif "delete_user" in request.POST:
-            user_id = request.POST.get("user_id")
-            if user_id:
-                user = get_object_or_404(get_user_model(), id=user_id)
-                user.delete()
-                messages.success(request, "User deleted successfully")
-    else:
-        # Crea un formulario de creación de usuarios sin el campo de contraseña
-        user_form = CustomUserForm()
+                user_id = request.POST.get("user_id")
+                if user_id:
+                    user = get_user_model().objects.filter(id=user_id).first()
+                    if user:
+                        deleted_username = user.username  # get name before deleting
+                        user.delete() 
+                        # Register name and action in Journal. (must be registered directly in the view because the user name wont be in the DB anymore.)
+                        Journal.objects.create(user=request.user, action=f"User deleted: {deleted_username}")
+                        messages.success(request, "User deleted successfully.")
+    
+    user_form = CustomUserForm()
 
     users = get_user_model().objects.all()
+    print(users)
+
 
     return render(
         request,
         "staff_view.html",
-        {"staff": staff, "user_form": user_form, "users": users},
+        {"user_form": user_form, "users": users},
     )
 
 @login_required

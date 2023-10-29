@@ -47,19 +47,19 @@ def production_required(view_func):
 
     return _wrapped_view
 
-
-def register_activity(action_name):  # accepst name of a view as an argument.
+#DONT TOUCH!
+def register_activity(action_func):
     def decorator(view_func):
         @wraps(view_func)
         def _wrapped_view(request, *args, **kwargs):
-            # does function logic
+            # Run the view and get the response
             response = view_func(request, *args, **kwargs)
-
-            # Register action in model "Journal"
-            Journal.objects.create(user=request.user, action=action_name)
-
-            return response
-
+            if request.method == "POST":
+                # Get the description of the action
+                action_description = action_func(request)
+                if action_description is not None:
+                    # Register the action in the "Journal" model
+                    Journal.objects.create(user=request.user, action=action_description)
+            return response  # Return the response obtained from running the view
         return _wrapped_view
-
     return decorator
