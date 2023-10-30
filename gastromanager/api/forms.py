@@ -60,7 +60,7 @@ class CustomUserForm(forms.ModelForm):
         help_text="Enter password, can be anything."
     )
 
-    # Address defined directly in CustomUserForm.
+    # Define the Address fields within the CustomUserForm
     line_1 = forms.CharField(max_length=255, label="Address Line 1")
     line_2 = forms.CharField(max_length=255, label="Address Line 2", required=False)
     city = forms.CharField(max_length=100)
@@ -77,12 +77,6 @@ class CustomUserForm(forms.ModelForm):
             "last_name",
             "email",
             "date_of_birth",
-            "line_1", 
-            "line_2",
-            "city",
-            "state",
-            "postal_code",
-            "country",
             "phone",
             "level",
             "is_active",
@@ -91,7 +85,10 @@ class CustomUserForm(forms.ModelForm):
         )
 
     def save(self, commit=True):
-        # Save an "Adress Form" in an instance of Address
+        # Save User data
+        user = super().save(commit=False)
+
+        # Save the Address data
         address = Address(
             line_1=self.cleaned_data.get('line_1'),
             line_2=self.cleaned_data.get('line_2'),
@@ -102,8 +99,7 @@ class CustomUserForm(forms.ModelForm):
         )
         address.save()
 
-        # Save User and assigne new Address
-        user = super().save(commit=False)
+        # Assign the address to the user
         user.address = address
 
         if commit:

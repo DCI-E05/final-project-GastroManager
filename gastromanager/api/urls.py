@@ -27,4 +27,6 @@ urlpatterns = [
         name="ingredient_inventory",
     ),
     path("logout/", views.custom_logout, name="custom_logout"),
+    path('profile/<int:user_id>/', views.view_profile, name='view_profile'),
+
 ]

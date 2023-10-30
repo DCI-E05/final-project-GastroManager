@@ -1,5 +1,5 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from .activities import activity_staff_view
+from .activities import activity_staff_view, activity_edit_profile
 from .models import (
     UserProfile,
     Recipe,
@@ -36,6 +36,8 @@ from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from django.http import Http404, HttpResponseForbidden
 from django.contrib.auth import logout
+from django.utils import timezone
+from django.db.models import Q
 
 
 # Create a modelformset for RecipeIngredients
@@ -63,7 +65,7 @@ def welcome_page(request):
             "Ingredient Inventory": "ingredient_inventory",
         },
         "Service": {
-            "Profile": "edit_profile",
+            "Profile": "view_profile",
             "Ice Cream Stock": "stock_view",
             "Recipes": "recipe_list",
             "Stock Takeout": "stock_takeout_view",
@@ -71,7 +73,7 @@ def welcome_page(request):
             "Ingredient Inventory": "ingredient_inventory",
         },
         "Production": {
-            "Profile": "edit_profile",
+            "Profile": "view_profile",
             "Ice Cream Stock": "stock_view",
             "Recipes": "recipe_list",
             "Production": "production_view",
@@ -90,10 +92,21 @@ def welcome_page(request):
         {"user_level": user_level, "user_options": user_options},
     )
 
+@login_required
+def view_profile(request, user_id):
+    user = get_object_or_404(UserProfile, id=user_id)
+
+    if request.user.level == "Manager":
+        return render(request, "view_profile.html", {"user": user}) #Manager has access to all profiles
+    elif user == request.user:
+        #user's own profile
+        return render(request, "view_profile.html", {"user": user})
+    else:
+        # User not allow to see other profiles.
+        return HttpResponseForbidden("Forbidden: You do not have permission to view this profile.")
 
 @login_required
-#@register_activity("Edit Profile")
-@login_required
+@register_activity(activity_edit_profile)
 def edit_profile(request, user_id=None):
     if user_id is not None:
         # Editing another user's profile
@@ -103,7 +116,7 @@ def edit_profile(request, user_id=None):
 
         user = get_object_or_404(get_user_model(), id=user_id)
     else:
-        # Editing one's own profile
+        # Editing  own profile
         user = request.user
 
     if request.method == "POST":
@@ -111,18 +124,20 @@ def edit_profile(request, user_id=None):
             # If the user is editing their own profile
             form = CustomUserNormalForm(request.POST, instance=user)
         else:
-            # If an admin is editing another user's profile
+            # If a Manager is editing another user's profile or its own.
             form = CustomUserForm(request.POST, instance=user)
 
         if form.is_valid():
             form.save()
             if request.user.level == "Manager":
-                # If the user is an admin, redirect to 'staff' view
+                messages.success(request, "User updated successfully.")
+                # If the user is an manager, redirect to 'staff_view'
                 return redirect("staff_view")
             else:
+                messages.success(request, "User updated successfully.")
                 # If the user is a normal user, redirect to 'edit_profile'
-                return redirect("edit_profile")
-
+                return redirect("profile_view")
+    
     else:
         # Display the appropriate form based on the user's role
         form = (
@@ -184,11 +199,48 @@ def stock_view(request):
     return render(request, "stock_view.html", {"stock_items": stock_items})
 
 
-@login_required
-#@manager_required
 def view_journal(request):
-    journal = Journal.objects.all().order_by("-timestamp")
-    return render(request, "journal.html", {"journal": journal})
+    # Get the filter parameter from the request
+    filter_type = request.GET.get('filter', 'all')
+
+    # Set the filter range based on the filter parameter
+    today = timezone.now()
+    if filter_type == 'today':
+        start_date = today.date()
+        end_date = today.date() + timezone.timedelta(days=1)
+    elif filter_type == 'this_week':
+        start_date = today - timezone.timedelta(days=today.weekday())
+        end_date = start_date + timezone.timedelta(days=7)
+    elif filter_type == 'this_month':
+        start_date = today.replace(day=1)
+        end_date = (today + timezone.timedelta(days=32)).replace(day=1)
+    elif filter_type == 'last_three_months':
+        start_date = today.replace(day=1) - timezone.timedelta(days=90)
+        end_date = today
+    else:
+        # Filter for all entries
+        start_date = None
+        end_date = None
+
+    # Get the search terms from the request
+    search_term = request.GET.get('search', '')
+    search_terms = search_term.split()  # Split the search term into individual words
+
+    # Create a list of Q objects for OR search on each word
+    search_queries = [Q(action__icontains=word) for word in search_terms]
+
+    # Combine the Q objects with the OR operator
+    combined_query = search_queries.pop() if search_queries else Q()
+    for query in search_queries:
+        combined_query |= query
+
+    # Query the journal based on the filter and combined search query
+    journal = Journal.objects.filter(
+        Q(timestamp__gte=start_date, timestamp__lt=end_date) if start_date is not None else Q(),
+        combined_query
+    ).order_by("-timestamp")
+
+    return render(request, "journal.html", {"journal": journal, "filter_type": filter_type, "search_term": search_term})
 
 
 # had to change auth decorator to use a class based view!
