@@ -1,4 +1,7 @@
 
+import cv2
+from pyzbar.pyzbar import decode
+
 from django.shortcuts import render, redirect, get_object_or_404
 from .activities import activity_staff_view, activity_edit_profile
 from .models import (
@@ -42,8 +45,6 @@ from django.db.models import Q
 from datetime import datetime
 import os
 
-import cv2
-from pyzbar.pyzbar import decode
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -95,6 +96,7 @@ def welcome_page(request):
     # Dictionary with options depending on acces level.
     options = {
         "Manager": {
+            "Clock in/out" : "scan_qr_code",
             "Staff Management": "staff_view",
             "Ice Cream Stock": "stock_view",
             "Journal": "view_journal",
@@ -106,6 +108,7 @@ def welcome_page(request):
             "Ingredient Inventory": "ingredient_inventory",
         },
         "Service": {
+            "Clock in/out" : "scan_qr_code",
             "Profile": "view_profile",
             "Ice Cream Stock": "stock_view",
             "Recipes": "recipe_list",
@@ -114,6 +117,7 @@ def welcome_page(request):
             "Ingredient Inventory": "ingredient_inventory",
         },
         "Production": {
+            "Clock in/out" : "scan_qr_code",
             "Profile": "view_profile",
             "Ice Cream Stock": "stock_view",
             "Recipes": "recipe_list",
@@ -137,15 +141,19 @@ def welcome_page(request):
 @login_required
 def view_profile(request, user_id):
     user = get_object_or_404(UserProfile, id=user_id)
+    badge = None
 
-    if request.user.level == "Manager":
-        return render(request, "view_profile.html", {"user": user}) #Manager has access to all profiles
-    elif user == request.user:
-        #user's own profile
-        return render(request, "view_profile.html", {"user": user})
-    else:
-        # User not allow to see other profiles.
-        return HttpResponseForbidden("Forbidden: You do not have permission to view this profile.")
+    if request.user.level == "Manager" or user == request.user:
+        # El Manager tiene acceso a todos los perfiles, y el usuario puede ver su propio perfil.
+        badge = generate_employee_badge(user)
+
+    context = {
+        "user": user,
+        "badge": badge,
+    }
+
+    return render(request, "view_profile.html", context)
+
 
 @login_required
 @register_activity(activity_edit_profile)
@@ -311,7 +319,7 @@ def recipe_detail(request, pk):
 
 
 @login_required
-@manager_required
+#@manager_required
 @register_activity
 def create_recipe(request):
     if request.method == "POST":
@@ -811,7 +819,7 @@ def check_inventory_availability(ingredient, total_quantity_needed):
         )
 
 
-
+#simple logout, it redirects you to login site.
 def custom_logout(request):
     logout(request)
     return redirect("/")
@@ -840,18 +848,16 @@ def scan_qr_code(request):
                     ).latest("clock_in")
                     last_clock_in.clock_out = datetime.now()
                     last_clock_in.save()
-                    return HttpResponse(
-                        f"Staff Member: {staff_member.username} - Clocked Out at {last_clock_in.clock_out}"
-                    )
+                    messages.success(request, f"Staff Member: {staff_member.username} - Clocked Out at {last_clock_in.clock_out}")#new
+                    return redirect("welcome")#new: welcome o edit_profile?
                 except WorkingHours.DoesNotExist:
                     # clock them in
                     working_hours = WorkingHours(
                         employee=staff_member, clock_in=datetime.now()
                     )
                     working_hours.save()
-                    return HttpResponse(
-                        f"Staff Member: {staff_member.username} - Clocked In at {working_hours.clock_in}"
-                    )
+                    messages.success(request, f"Staff Member: {staff_member.username} - Clocked In at {working_hours.clock_in}") #new
+                    return redirect("welcome") #new
 
             except UserProfile.DoesNotExist:
                 cap.release()

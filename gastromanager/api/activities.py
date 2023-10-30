@@ -2,7 +2,7 @@
 #LOGIC FOR REGISTERING FUNCTIONALITIES FROM VIEW IN JOURNAL. USING DECORATOR @register_activity
 #for each view that wants to be register, must be first configurated here the way it would be display.
 #Always satarts declaring an action = None and then return it with the activity message to be display in journal.
-#If the registration is related to information that is being deleted form the DB, it must be configurated directly in the view.
+#If the registration is related to information that is being deleted form the DB, it must be configurated directly in the VIEW.PY.
 
 
 def activity_staff_view(request, *args, **kwargs):
