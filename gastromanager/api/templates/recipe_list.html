@@ -12,15 +12,16 @@
       </li>
     {% endfor %}
   </ul>
-  {% if user_level in ["Manager", "Production"] %}
-    <p>You have permissions to access recipe details.</p>
+  {% if request.user.level == 'Manager' or request.user.level == 'Production' %}
+  <p>You have permissions to access recipe details.</p>
   {% else %}
     <p>You need Manager or Production permissions to access recipe details.</p>
   {% endif %}
-  {% if user_level == "Manager" %}
+  {% if request.user.level == "Manager" %}
     <a href="{% url 'create_recipe' %}" class="btn btn-primary">Create New Recipe</a>
     <p>You have Manager permissions to create and delete recipes.</p>
   {% else %}
     <p>You need Manager permissions to create and delete recipes.</p>
   {% endif %}
 </div>
+{% endblock %}

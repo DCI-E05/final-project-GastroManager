@@ -63,3 +63,4 @@ def register_activity(action_func):
             return response  # Return the response obtained from running the view
         return _wrapped_view
     return decorator
+#DONT TOUCH

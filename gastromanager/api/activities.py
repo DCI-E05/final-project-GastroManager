@@ -1,4 +1,3 @@
-from django.contrib.auth import get_user_model
 
 #LOGIC FOR REGISTERING FUNCTIONALITIES FROM VIEW IN JOURNAL. USING DECORATOR @register_activity
 #for each view that wants to be register, must be first configurated here the way it would be display.
