@@ -33,7 +33,7 @@ urlpatterns = [
     #     name="working_hours_list",
     # ),
     path("scan/", views.scan_qr_code, name="scan_qr_code"),
-    path("badge/", views.generate_employee_badge, name="badge_maker"),
+    path("badge/", views.generate_employee_badge, name="badge_generator"),
     path(
         "working_hours/<int:staff_member_id>/",
         views.working_hours_list,

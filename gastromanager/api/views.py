@@ -443,7 +443,8 @@ def staff_member_list(request):
     data = [{"name": staff.username, "email": staff.email} for staff in staff_members]
     return JsonResponse(data, safe=False)
 
-
+# @login_required
+# @manager_required
 def generate_employee_badge(request):
     employees = UserProfile.objects.all()
 
