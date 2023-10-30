@@ -13,9 +13,15 @@ from .models import (
     UserProfile,
     Journal,
 )
+
 '''from django.contrib.auth.admin import UserAdmin'''
 
 '''
+
+from django.contrib.auth.admin import UserAdmin
+
+
+
 class UserProfileAdmin(UserAdmin):
     # Campos que deseas mostrar en el formulario de edición del usuario
     fieldsets = (
@@ -74,6 +80,7 @@ class RecipeAdmin(admin.ModelAdmin):
 class IngredientIncomingAdmin(admin.ModelAdmin):
     list_display = ["ingredient", "quantity", "date_received"]
     raw_id_fields = ["ingredient"]
+
 '''
 
 admin.site.register(Address)

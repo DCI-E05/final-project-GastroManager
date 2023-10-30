@@ -1,3 +1,4 @@
+
 from django.shortcuts import render, redirect, get_object_or_404
 from .activities import activity_staff_view, activity_edit_profile
 from .models import (
@@ -38,12 +39,52 @@ from django.http import Http404, HttpResponseForbidden
 from django.contrib.auth import logout
 from django.utils import timezone
 from django.db.models import Q
+from datetime import datetime
+import os
 
+import cv2
+from pyzbar.pyzbar import decode
+
+from django.contrib import messages
+from django.contrib.auth.decorators import login_required
+from django.core.exceptions import ValidationError
+from django.db import transaction
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+from django.forms import modelformset_factory
+from django.http import JsonResponse, HttpResponse
+from django.shortcuts import render, redirect, get_object_or_404
+from django.utils.decorators import method_decorator
+from django.views.generic import ListView
+
+
+from .models import (
+    UserProfile,
+    Recipe,
+    Ingredient,
+    IngredientInventory,
+    IngredientIncoming,
+    RecipeIngredient,
+    IceCreamProduction,
+    StockItem,
+    IceCreamStockTakeOut,
+    Journal,
+    EmployeeBadge,
+    WorkingHours,
+)
+from .forms import RecipeForm, ProductionCalculatorForm
+from .decorators import (
+    manager_required,
+    service_required,
+    production_required,
+    register_activity,
+)
 
 # Create a modelformset for RecipeIngredients
 RecipeIngredientFormSet = modelformset_factory(
     RecipeIngredient, fields=("ingredient", "quantity"), extra=5
 )
+
 
 
 @login_required
@@ -91,6 +132,7 @@ def welcome_page(request):
         "welcome.html",
         {"user_level": user_level, "user_options": user_options},
     )
+
 
 @login_required
 def view_profile(request, user_id):
@@ -193,13 +235,16 @@ def staff_view(request):
         {"user_form": user_form, "users": users},
     )
 
+
 @login_required
 def stock_view(request):
     stock_items = StockItem.objects.all()
     return render(request, "stock_view.html", {"stock_items": stock_items})
 
 
+
 def view_journal(request):
+
     # Get the filter parameter from the request
     filter_type = request.GET.get('filter', 'all')
 
@@ -265,13 +310,46 @@ def recipe_detail(request, pk):
     return render(request, "recipe_detail.html", {"recipe": recipe})
 
 
+@login_required
+@manager_required
+@register_activity
+def create_recipe(request):
+    if request.method == "POST":
+        # Create a RecipeForm instance from the POST data
+        form = RecipeForm(request.POST)
+        # Create a RecipeIngredientFormSet instance from the POST data
+        formset = RecipeIngredientFormSet(
+            request.POST, queryset=RecipeIngredient.objects.none()
+        )
+
+        if form.is_valid() and formset.is_valid():
+            # Save the recipe
+            recipe = form.save()
+
+            # Associate the recipe with ingredients and quantities
+            instances = formset.save(commit=False)
+            for instance in instances:
+                instance.recipe = recipe
+                instance.save()
+
+            return redirect("recipe_detail", pk=recipe.pk)
+    else:
+        # Create a RecipeForm instance for rendering the recipe form
+        form = RecipeForm()
+        # Create a RecipeIngredientFormSet instance for rendering the ingredient formset
+        formset = RecipeIngredientFormSet(queryset=RecipeIngredient.objects.none())
+
+    # Render the recipe form and the ingredient formset
+    return render(request, "create_recipe.html", {"form": form, "formset": formset})
+
+
+
 # This view allows a manager to update an existing recipe.
 @login_required
 #@manager_required
 #@register_activity
 def update_recipe(request, pk):
     recipe = get_object_or_404(Recipe, pk=pk)
-
     if request.method == "POST":
         form = RecipeForm(request.POST, instance=recipe)
 
@@ -300,7 +378,6 @@ def update_recipe(request, pk):
     else:
         # Create a form to render the recipe form with the existing data
         form = RecipeForm(instance=recipe)
-
     return render(request, "update_recipe.html", {"form": form})
 
 
@@ -356,6 +433,7 @@ def create_recipe(request):
     return render(request, "create_recipe.html", {"form": form})
 
 
+
 @login_required
 #@manager_required
 #@production_required
@@ -366,9 +444,9 @@ def production_view(request):
         quantity_produced = request.POST["quantity_produced"]
         container_size = request.POST["container_size"]
         produced_by = request.user
-
         recipe = Recipe.objects.get(pk=recipe_id)
         recipe_ingredients = RecipeIngredient.objects.filter(recipe=recipe)
+
 
         try:
             # Check ingredient availability in inventory, and catch any ValidationErrors
@@ -397,6 +475,7 @@ def production_view(request):
             return redirect("production_view")
 
     return redirect("production_view")
+
 
 
 @login_required
@@ -472,7 +551,6 @@ def create_production(
         inventory.quantity -= required_quantity
         inventory.save()
 
-
 def add_base_to_inventory(recipe, quantity_produced):
     # Create the base ingredient
     base_ingredient, created = Ingredient.objects.get_or_create(
@@ -534,6 +612,7 @@ def stock_takeout_view(request):
         )
 
         return redirect("stock_takeout_view")
+
 
 
 @login_required
@@ -645,6 +724,7 @@ def production_calculator_view(request):
     if request.method == "POST":
         form = ProductionCalculatorForm(request.POST)
         if form.is_valid():
+
             recipes = form.cleaned_data["recipes"]
             desired_quantities = form.cleaned_data["desired_quantities"]
 
@@ -673,6 +753,7 @@ def production_calculator_view(request):
         form = ProductionCalculatorForm()
 
     return render(request, "production_calculator.html", {"form": form})
+
 
 
 def calculate_production(recipe, desired_quantity, total_ingredient_quantities):
@@ -730,6 +811,107 @@ def check_inventory_availability(ingredient, total_quantity_needed):
         )
 
 
+
 def custom_logout(request):
     logout(request)
     return redirect("/")
+
+
+@register_activity("Scan QR Code")
+def scan_qr_code(request):
+    cap = cv2.VideoCapture(0)
+
+    while True:
+        ret, frame = cap.read()
+        decoded_objects = decode(frame)
+
+        for obj in decoded_objects:
+            data = obj.data.decode("utf-8")
+
+            try:
+                staff_member = UserProfile.objects.get(id=data)
+                cap.release()
+                cv2.destroyAllWindows()
+
+                # Check if the staff member is already clocked in
+                try:
+                    last_clock_in = WorkingHours.objects.filter(
+                        employee=staff_member, clock_out__isnull=True
+                    ).latest("clock_in")
+                    last_clock_in.clock_out = datetime.now()
+                    last_clock_in.save()
+                    return HttpResponse(
+                        f"Staff Member: {staff_member.username} - Clocked Out at {last_clock_in.clock_out}"
+                    )
+                except WorkingHours.DoesNotExist:
+                    # clock them in
+                    working_hours = WorkingHours(
+                        employee=staff_member, clock_in=datetime.now()
+                    )
+                    working_hours.save()
+                    return HttpResponse(
+                        f"Staff Member: {staff_member.username} - Clocked In at {working_hours.clock_in}"
+                    )
+
+            except UserProfile.DoesNotExist:
+                cap.release()
+                cv2.destroyAllWindows()
+                return HttpResponse("Staff Member not found")
+
+        cv2.imshow("QR Code Scanner", frame)
+
+        if cv2.waitKey(1) & 0xFF == ord("q"):
+            break
+
+    cap.release()
+    cv2.destroyAllWindows()
+    return HttpResponse("QR Code not found")
+
+
+def staff_member_list(request):
+    staff_members = UserProfile.objects.all()
+    data = [{"name": staff.username, "email": staff.email} for staff in staff_members]
+    return JsonResponse(data, safe=False)
+
+
+def generate_employee_badge(request):
+    employees = UserProfile.objects.all()
+
+    if request.method == "POST":
+        employee_id = request.POST["employee_id"]
+        selected_employee = UserProfile.objects.get(id=employee_id)
+
+        # Generate the badge for the selected employee
+        badge = EmployeeBadge(
+            employee_name=selected_employee.username, employee_id=selected_employee.id
+        )
+        file_name = badge.generate_badge()
+
+        if file_name:
+            with open(file_name, "rb") as badge_file:
+                response = HttpResponse(
+                    badge_file.read(), content_type="application/pdf"
+                )
+                response[
+                    "Content-Disposition"
+                ] = f'attachment; filename="{file_name.replace("api/badges/", "")}"'
+                os.remove(file_name)
+                return response
+        else:
+            return HttpResponse("Badge not generated.")
+
+    return render(request, "api/employee_list.html", {"employees": employees})
+
+
+def working_hours_list(request, staff_member_id):
+    working_hours = WorkingHours.objects.filter(employee_id=staff_member_id)
+    data = [
+        {
+            "clock_in": wh.clock_in,
+            "clock_out": wh.clock_out,
+            "recorded_time": wh.recorded_time(),
+        }
+        for wh in working_hours
+    ]
+    return JsonResponse(data, safe=False)
+

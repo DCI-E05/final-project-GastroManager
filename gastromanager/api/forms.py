@@ -3,6 +3,7 @@ from .models import Recipe, Ingredient, UserProfile, IngredientInventory, Addres
 from django.core.exceptions import ValidationError
 
 
+
 class RecipeForm(forms.ModelForm):
     class Meta:
         model = Recipe
@@ -26,6 +27,7 @@ class RecipeForm(forms.ModelForm):
         ),
         required=False,
     )
+
 
     new_ingredient_name = forms.CharField(
         max_length=255,
@@ -166,3 +168,4 @@ class IngredientInventoryUpdateForm(forms.ModelForm):
         if quantity < 0:
             raise ValidationError("Quantity must be a positive number.")
         return quantity
+

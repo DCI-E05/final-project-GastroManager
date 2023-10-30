@@ -1,7 +1,19 @@
+
 from django.contrib.auth.models import AbstractUser
 from django.contrib.auth import get_user_model
 from django.conf import settings
 from django.db import models
+
+
+from datetime import datetime
+from PIL import Image, ImageDraw, ImageFont
+import qrcode
+
+from django.contrib.auth.models import AbstractUser
+from django.contrib.auth import get_user_model
+from django.conf import settings
+from django.db import models
+
 
 
 class Address(models.Model):
@@ -22,7 +34,6 @@ class UserProfile(AbstractUser):
     date_of_birth = models.DateField(null=True)
     address = models.ForeignKey(Address, on_delete=models.CASCADE, null=True)
     phone = models.CharField(max_length=255)
-
     # Choices for the staff member's role
     LEVEL_CHOICES = [
         ("Service", "Service"),
@@ -40,8 +51,67 @@ class Journal(models.Model):
     action = models.CharField(max_length=255)
     timestamp = models.DateTimeField(auto_now_add=True)
 
+
     def __str__(self):
         return f"{self.timestamp} - {self.user} - {self.action}"
+
+
+
+class EmployeeBadge(models.Model):
+    employee_name = models.CharField(max_length=255)
+    employee_id = models.PositiveIntegerField()
+
+    def generate_badge(self):
+        data = self.employee_id
+        background_color = (255, 253, 240)
+
+        badge_width = 250
+        badge_height = 400
+        badge_center_x_axis = badge_width // 2
+        badge = Image.new("RGB", (badge_width, badge_height), background_color)
+        draw = ImageDraw.Draw(badge)
+
+        qr = qrcode.QRCode(
+            version=1,
+            error_correction=qrcode.constants.ERROR_CORRECT_L,
+            box_size=8,
+            border=2,
+        )
+        qr.add_data(data)
+        qr.make(fit=True)
+        qr_img = qr.make_image(fill_color="black", back_color=background_color)
+
+        logo_path = "api/media/green_scoop.png"
+        logo = Image.open(logo_path)
+        logo_x_axis_position = badge_center_x_axis - (logo.width // 2)
+
+        font_path = "api/fonts/arial.ttf"
+        font = ImageFont.truetype(font_path, 20)
+
+        draw.text((80, 180), self.employee_name, fill="black", font=font)
+        badge.paste(qr_img, (25, 200))
+        badge.paste(logo, (logo_x_axis_position, 20))
+
+        file_name = f"api/badges/{self.employee_name.replace(' ', '_')}_Badge.png"
+        badge.save(file_name)
+
+        return file_name
+
+
+class WorkingHours(models.Model):
+    employee = models.ForeignKey(UserProfile, on_delete=models.CASCADE, null=True)
+    clock_in = models.DateTimeField(default=datetime.now)
+    clock_out = models.DateTimeField(null=True, blank=datetime.now)
+
+    def recorded_time(self):
+        if self.clock_out is not None:
+            time_difference = self.clock_out - self.clock_in
+            hours, remainder = divmod(time_difference.seconds, 3600)
+            minutes, seconds = divmod(remainder, 60)
+            return f"{time_difference.days} days {hours} hours {minutes} minutes {seconds} seconds"
+        else:
+            return None
+
 
 
 class Ingredient(models.Model):  # Model to represent an ingredient
@@ -94,8 +164,10 @@ class IngredientInventory(models.Model):
             inventory_entry.save()
 
 
+
  #  model represents incoming ingredients in the shop.
 class IngredientIncoming(models.Model): 
+
     GRAMS = "grams"
     UNITS = "units"
     UNIT_CHOICES = [
