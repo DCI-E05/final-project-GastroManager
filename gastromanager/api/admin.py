@@ -13,7 +13,13 @@ from .models import (
     UserProfile,
     Journal,
 )
+
+'''from django.contrib.auth.admin import UserAdmin'''
+
+'''
+
 from django.contrib.auth.admin import UserAdmin
+
 
 
 class UserProfileAdmin(UserAdmin):
@@ -75,15 +81,16 @@ class IngredientIncomingAdmin(admin.ModelAdmin):
     list_display = ["ingredient", "quantity", "date_received"]
     raw_id_fields = ["ingredient"]
 
+'''
 
 admin.site.register(Address)
 admin.site.register(Ingredient)
 admin.site.register(IngredientInventory)
-admin.site.register(IngredientIncoming, IngredientIncomingAdmin)
-admin.site.register(Recipe, RecipeAdmin)
-admin.site.register(RecipeIngredient)
-admin.site.register(IceCreamProduction)
-admin.site.register(StockItem)
-admin.site.register(IceCreamStockTakeOut)
-admin.site.register(UserProfile, UserProfileAdmin)
+admin.site.register(IngredientIncoming), #IngredientIncomingAdmin)
+admin.site.register(Recipe), #RecipeAdmin)
+admin.site.register(RecipeIngredient),
+admin.site.register(IceCreamProduction),
+admin.site.register(StockItem),
+admin.site.register(IceCreamStockTakeOut),
+admin.site.register(UserProfile), #UserProfileAdmin)
 admin.site.register(Journal)

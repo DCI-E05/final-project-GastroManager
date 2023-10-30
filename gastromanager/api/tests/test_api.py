@@ -7,6 +7,17 @@ from django.test import Client, TestCase
 from django.core.exceptions import ValidationError
 from django.urls import reverse
 from django.contrib.auth import get_user_model
+from api.models import (
+    Ingredient,
+    IngredientInventory,
+    Recipe,
+    RecipeIngredient,
+    IceCreamProduction,
+    StockItem,
+    IceCreamStockTakeOut,
+    IngredientIncoming,
+)
+from django.test import Client
 
 from api.forms import RecipeForm, ProductionCalculatorForm
 from api.models import (
@@ -25,6 +36,7 @@ from api.models import (
 
 
 # fixture: These fixtures ensure that the test cases have consistent and controlled data to work with, improving the reliability of the tests.
+
 
 
 @pytest.fixture
@@ -391,6 +403,7 @@ def test_insufficient_stock_takeout(create_stock_item, create_user, client):
     # This test checks that attempting to take more stock quantity than what is available raises a validation error.
 
 
+
 class EmployeeBadgeTest(TestCase):
     def test_generate_badge(self):
         employee = EmployeeBadge(employee_name="John Doe", employee_id=12345)
@@ -438,3 +451,4 @@ class WorkingHoursTest(TestCase):
         )
 
         self.assertIsNone(working_hours.recorded_time())
+

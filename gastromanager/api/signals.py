@@ -1,20 +1,18 @@
 from django.db.models.signals import post_save
 from django.dispatch import receiver
-from .models import (
-    IngredientIncoming,
-    IngredientInventory,
-    IceCreamProduction,
-    StockItem,
-)
+from .models import IceCreamProduction, StockItem
 
 
-@receiver(post_save, sender=IngredientIncoming)
+
+
+"""@receiver(post_save, sender=IngredientIncoming)
 def update_inventory(sender, instance, created, **kwargs):
     if created:
         # Update or create the inventory entry for the received ingredient
         IngredientInventory.update_or_create_inventory(
             instance.ingredient, instance.quantity
-        )
+        )"""
+
 
 
 @receiver(post_save, sender=IceCreamProduction)

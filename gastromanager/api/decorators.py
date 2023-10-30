@@ -9,7 +9,9 @@ def manager_required(view_func):
         # Check if the user's level is "Manager"
         if (
             request.user.is_authenticated
-            and request.user.userprofile.level == "Manager"
+
+            and request.user.level == "Manager"
+
         ):
             return view_func(request, *args, **kwargs)
         else:
@@ -24,7 +26,9 @@ def service_required(view_func):
         # Check if the user's level is "Service"
         if (
             request.user.is_authenticated
-            and request.user.userprofile.level == "Service"
+
+            and request.user.level == "Service"
+
         ):
             return view_func(request, *args, **kwargs)
         else:
@@ -39,7 +43,9 @@ def production_required(view_func):
         # Check if the user's level is "Production"
         if (
             request.user.is_authenticated
-            and request.user.userprofile.level == "Production"
+
+            and request.user.level == "Production"
+
         ):
             return view_func(request, *args, **kwargs)
         else:
@@ -48,20 +54,21 @@ def production_required(view_func):
     return _wrapped_view
 
 
-def register_activity(
-    action_name,
-):  # as the name says, this will register all selected functions in views.py
+#DONT TOUCH!
+def register_activity(action_func):
     def decorator(view_func):
         @wraps(view_func)
         def _wrapped_view(request, *args, **kwargs):
-            # does function logic
+            # Run the view and get the response
             response = view_func(request, *args, **kwargs)
-
-            # Register action in model "Journal"
-            Journal.objects.create(user=request.user, action=action_name)
-
-            return response
-
+            if request.method == "POST":
+                # Get the description of the action
+                action_description = action_func(request)
+                if action_description is not None:
+                    # Register the action in the "Journal" model
+                    Journal.objects.create(user=request.user, action=action_description)
+            return response  # Return the response obtained from running the view
         return _wrapped_view
-
     return decorator
+#DONT TOUCH
+
