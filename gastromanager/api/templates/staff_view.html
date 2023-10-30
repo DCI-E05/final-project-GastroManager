@@ -34,6 +34,11 @@
               <button type="submit" name="delete_user" class="btn btn-danger">Delete</button>
             </form>
             <a href="{% url 'view_profile' user.id %}" class="btn btn-primary">Details</a>
+            <form method="post" style="margin-right: 10px;" action="{% url 'badge_maker' %}">
+              {% csrf_token %}
+              <input type="hidden" name="employee_id" value="{{ user.id }}">
+              <button type="submit" class="btn btn-secondary">Generate Badge</button>
+            </form>
           </div>
         </li>
       {% endfor %}

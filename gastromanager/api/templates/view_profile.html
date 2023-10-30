@@ -19,6 +19,12 @@
         <li><strong>Level:</strong> {{ user.level }}</li>
     </ul>
 
+    <form method="post" action="{% url 'badge_maker' %}">
+      {% csrf_token %}
+      <input type="hidden" name="employee_id" value="{{ user.id }}">
+      <button type="submit" class="btn btn-secondary">Generate Badge</button>
+    </form>
+
     <a href="{% url 'edit_profile' user.id %}" class="btn btn-primary">Edit Profile</a>
 
     {% if request.user.level == 'Manager' %}
