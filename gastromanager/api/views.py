@@ -1,9 +1,12 @@
-
 import cv2
 from pyzbar.pyzbar import decode
 
 from django.shortcuts import render, redirect, get_object_or_404
-from .activities import activity_staff_view, activity_edit_profile
+from .activities import (
+    activity_staff_view,
+    activity_edit_profile,
+    scan_journal_log,
+)
 from .models import (
     UserProfile,
     Recipe,
@@ -38,7 +41,7 @@ from .decorators import (
 from django.utils.decorators import method_decorator
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
-from django.http import Http404, HttpResponseForbidden
+from django.http import Http404, HttpResponseForbidden, HttpRequest
 from django.contrib.auth import logout
 from django.utils import timezone
 from django.db.models import Q
@@ -141,18 +144,13 @@ def welcome_page(request):
 @login_required
 def view_profile(request, user_id):
     user = get_object_or_404(UserProfile, id=user_id)
-    badge = None
-
-    if request.user.level == "Manager" or user == request.user:
-        # El Manager tiene acceso a todos los perfiles, y el usuario puede ver su propio perfil.
-        badge = generate_employee_badge(user)
 
     context = {
         "user": user,
-        "badge": badge,
     }
 
     return render(request, "view_profile.html", context)
+
 
 
 @login_required
@@ -214,7 +212,6 @@ def staff_view(request):
             user_form = CustomUserForm(request.POST)
             if user_form.is_valid():
                 user = user_form.save(commit=False)
-                # Establece la contraseña personalizada proporcionada por el administrador
                 password = request.POST.get("password")
                 user.set_password(password)
                 user.save()
@@ -825,7 +822,7 @@ def custom_logout(request):
     return redirect("/")
 
 
-@register_activity("Scan QR Code")
+@register_activity(scan_journal_log)
 def scan_qr_code(request):
     cap = cv2.VideoCapture(0)
 
@@ -884,7 +881,7 @@ def generate_employee_badge(request):
     employees = UserProfile.objects.all()
 
     if request.method == "POST":
-        employee_id = request.POST["employee_id"]
+        employee_id = request.POST.get("employee_id")
         selected_employee = UserProfile.objects.get(id=employee_id)
 
         # Generate the badge for the selected employee
