@@ -821,11 +821,15 @@ def custom_logout(request):
 
 import cv2
 
-def scan_qr_code(request):
-    while True:
-        cap = cv2.VideoCapture(0)
-        ret, frame = cap.read()
 
+
+
+# @register_activity(scan_journal_log)
+def scan_qr_code(request):
+    cap = cv2.VideoCapture(0)
+
+    while True:
+        ret, frame = cap.read()
         decoded_objects = decode(frame)
 
         for obj in decoded_objects:
@@ -833,6 +837,8 @@ def scan_qr_code(request):
 
             try:
                 staff_member = UserProfile.objects.get(id=data)
+                cap.release()
+                cv2.destroyAllWindows()
 
                 # Check if the staff member is already clocked in
                 try:
@@ -844,12 +850,10 @@ def scan_qr_code(request):
                     messages.success(
                         request,
                         f"Staff Member: {staff_member.username} - Clocked Out at {last_clock_in.clock_out}",
-                    )
-                    cap.release()
-                    cv2.destroyAllWindows()
-                    return redirect("welcome")
+                    )  # new
+                    return redirect("welcome")  # new: welcome o edit_profile?
                 except WorkingHours.DoesNotExist:
-                    # Clock them in
+                    # clock them in
                     working_hours = WorkingHours(
                         employee=staff_member, clock_in=datetime.now()
                     )
@@ -857,110 +861,23 @@ def scan_qr_code(request):
                     messages.success(
                         request,
                         f"Staff Member: {staff_member.username} - Clocked In at {working_hours.clock_in}",
-                    )
-                    cap.release()
-                    cv2.destroyAllWindows()
-                    return redirect("welcome")
+                    )  # new
+                    return redirect("welcome")  # new
 
             except UserProfile.DoesNotExist:
                 cap.release()
                 cv2.destroyAllWindows()
-                return HttpResponse("Staff Member not found")
+                return redirect("welcome")
 
         cv2.imshow("QR Code Scanner", frame)
 
         if cv2.waitKey(1) & 0xFF == ord("q"):
-            cap.release()
-            cv2.destroyAllWindows()
             break
 
+    cap.release()
+    cv2.destroyAllWindows()
     return redirect("welcome")
 
-
-
-# # @register_activity(scan_journal_log)
-# def scan_qr_code(request):
-#     cap = cv2.VideoCapture(0)
-
-#     while True:
-#         ret, frame = cap.read()
-#         decoded_objects = decode(frame)
-
-#         for obj in decoded_objects:
-#             data = obj.data.decode("utf-8")
-
-#             try:
-#                 staff_member = UserProfile.objects.get(id=data)
-#                 cap.release()
-#                 cv2.destroyAllWindows()
-
-#                 # Check if the staff member is already clocked in
-#                 try:
-#                     last_clock_in = WorkingHours.objects.filter(
-#                         employee=staff_member, clock_out__isnull=True
-#                     ).latest("clock_in")
-#                     last_clock_in.clock_out = datetime.now()
-#                     last_clock_in.save()
-#                     messages.success(
-#                         request,
-#                         f"Staff Member: {staff_member.username} - Clocked Out at {last_clock_in.clock_out}",
-#                     )  # new
-#                     return redirect("welcome")  # new: welcome o edit_profile?
-#                 except WorkingHours.DoesNotExist:
-#                     # clock them in
-#                     working_hours = WorkingHours(
-#                         employee=staff_member, clock_in=datetime.now()
-#                     )
-#                     working_hours.save()
-#                     messages.success(
-#                         request,
-#                         f"Staff Member: {staff_member.username} - Clocked In at {working_hours.clock_in}",
-#                     )  # new
-#                     return redirect("welcome")  # new
-
-#             except UserProfile.DoesNotExist:
-#                 cap.release()
-#                 cv2.destroyAllWindows()
-#                 return HttpResponse("Staff Member not found")
-
-#         cv2.imshow("QR Code Scanner", frame)
-
-#         if cv2.waitKey(1) & 0xFF == ord("q"):
-#             break
-
-#     cap.release()
-#     cv2.destroyAllWindows()
-#     return redirect("welcome")
-
-# def scan_qr_code(request):
-#     cap = cv2.VideoCapture(0)
-#     staff_member_id = None  # Initialize staff_member_id
-
-#     while True:
-#         ret, frame = cap.read()
-#         decoded_objects = decode(frame)
-
-#         for obj in decoded_objects:
-#             data = obj.data.decode("utf-8")
-#             staff_member_id = data  # Set staff_member_id when a QR code is detected
-
-#         # Check form validity after obtaining staff_member_id
-#         if staff_member_id:
-#             form = ClockInOutForm(initial={'staff_member_id': staff_member_id})
-#             if form.is_valid():
-#                 cap.release()
-#                 cv2.destroyAllWindows()
-#                 return render(request, 'your_template.html', {'form': form})
-
-#         cv2.imshow("QR Code Scanner", frame)
-
-#         if cv2.waitKey(1) & 0xFF == ord("q"):
-#             break
-
-#     cap.release()
-#     cv2.destroyAllWindows()
-
-#     return HttpResponse("QR Code not found")
 
 
 def staff_member_list(request):
