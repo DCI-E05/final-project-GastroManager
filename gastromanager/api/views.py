@@ -25,6 +25,7 @@ from .forms import (
     CustomUserForm,
     IngredientInventoryUpdateForm,
     CustomUserNormalForm,
+    ClockInOutForm,
 )
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -90,16 +91,15 @@ RecipeIngredientFormSet = modelformset_factory(
 )
 
 
-
 @login_required
 def welcome_page(request):
     # Get access level from user
     user_level = request.user.level
 
-    # Dictionary with options depending on acces level.
+    # Dictionary with options depending on access level.
     options = {
         "Manager": {
-            "Clock in/out" : "scan_qr_code",
+            "Clock in/out": "scan_qr_code",
             "Staff Management": "staff_view",
             "Ice Cream Stock": "stock_view",
             "Journal": "view_journal",
@@ -111,7 +111,7 @@ def welcome_page(request):
             "Ingredient Inventory": "ingredient_inventory",
         },
         "Service": {
-            "Clock in/out" : "scan_qr_code",
+            "Clock in/out": "scan_qr_code",
             "Profile": "view_profile",
             "Ice Cream Stock": "stock_view",
             "Recipes": "recipe_list",
@@ -120,7 +120,7 @@ def welcome_page(request):
             "Ingredient Inventory": "ingredient_inventory",
         },
         "Production": {
-            "Clock in/out" : "scan_qr_code",
+            "Clock in/out": "scan_qr_code",
             "Profile": "view_profile",
             "Ice Cream Stock": "stock_view",
             "Recipes": "recipe_list",
@@ -131,7 +131,7 @@ def welcome_page(request):
         },
     }
 
-    # Get specific option according to acces level. This will be used in the main welcome template.
+    # Get specific option according to access level. This will be used in the main welcome template.
     user_options = options.get(user_level, {})
 
     return render(
@@ -150,7 +150,6 @@ def view_profile(request, user_id):
     }
 
     return render(request, "view_profile.html", context)
-
 
 
 @login_required
@@ -185,7 +184,7 @@ def edit_profile(request, user_id=None):
                 messages.success(request, "User updated successfully.")
                 # If the user is a normal user, redirect to 'edit_profile'
                 return redirect("profile_view")
-    
+
     else:
         # Display the appropriate form based on the user's role
         form = (
@@ -198,12 +197,12 @@ def edit_profile(request, user_id=None):
 
 
 @login_required
-#@manager_required
+# @manager_required
 @register_activity(activity_staff_view)
 def staff_view(request):
     if request.user.level != "Manager":
         return HttpResponseForbidden("Forbidden")
-    
+
     users = get_user_model().objects.all()
     user_form = None
 
@@ -218,21 +217,22 @@ def staff_view(request):
                 messages.success(request, "User added successfully.")
                 return redirect("staff_view")
         elif "delete_user" in request.POST:
-                user_id = request.POST.get("user_id")
-                if user_id:
-                    user = get_user_model().objects.filter(id=user_id).first()
-                    if user:
-                        deleted_username = user.username  # get name before deleting
-                        user.delete() 
-                        # Register name and action in Journal. (must be registered directly in the view because the user name wont be in the DB anymore.)
-                        Journal.objects.create(user=request.user, action=f"User deleted: {deleted_username}")
-                        messages.success(request, "User deleted successfully.")
-    
+            user_id = request.POST.get("user_id")
+            if user_id:
+                user = get_user_model().objects.filter(id=user_id).first()
+                if user:
+                    deleted_username = user.username  # get name before deleting
+                    user.delete()
+                    # Register name and action in Journal. (must be registered directly in the view because the user name wont be in the DB anymore.)
+                    Journal.objects.create(
+                        user=request.user, action=f"User deleted: {deleted_username}"
+                    )
+                    messages.success(request, "User deleted successfully.")
+
     user_form = CustomUserForm()
 
     users = get_user_model().objects.all()
     print(users)
-
 
     return render(
         request,
@@ -247,24 +247,22 @@ def stock_view(request):
     return render(request, "stock_view.html", {"stock_items": stock_items})
 
 
-
 def view_journal(request):
-
     # Get the filter parameter from the request
-    filter_type = request.GET.get('filter', 'all')
+    filter_type = request.GET.get("filter", "all")
 
     # Set the filter range based on the filter parameter
     today = timezone.now()
-    if filter_type == 'today':
+    if filter_type == "today":
         start_date = today.date()
         end_date = today.date() + timezone.timedelta(days=1)
-    elif filter_type == 'this_week':
+    elif filter_type == "this_week":
         start_date = today - timezone.timedelta(days=today.weekday())
         end_date = start_date + timezone.timedelta(days=7)
-    elif filter_type == 'this_month':
+    elif filter_type == "this_month":
         start_date = today.replace(day=1)
         end_date = (today + timezone.timedelta(days=32)).replace(day=1)
-    elif filter_type == 'last_three_months':
+    elif filter_type == "last_three_months":
         start_date = today.replace(day=1) - timezone.timedelta(days=90)
         end_date = today
     else:
@@ -273,7 +271,7 @@ def view_journal(request):
         end_date = None
 
     # Get the search terms from the request
-    search_term = request.GET.get('search', '')
+    search_term = request.GET.get("search", "")
     search_terms = search_term.split()  # Split the search term into individual words
 
     # Create a list of Q objects for OR search on each word
@@ -286,11 +284,17 @@ def view_journal(request):
 
     # Query the journal based on the filter and combined search query
     journal = Journal.objects.filter(
-        Q(timestamp__gte=start_date, timestamp__lt=end_date) if start_date is not None else Q(),
-        combined_query
+        Q(timestamp__gte=start_date, timestamp__lt=end_date)
+        if start_date is not None
+        else Q(),
+        combined_query,
     ).order_by("-timestamp")
 
-    return render(request, "journal.html", {"journal": journal, "filter_type": filter_type, "search_term": search_term})
+    return render(
+        request,
+        "journal.html",
+        {"journal": journal, "filter_type": filter_type, "search_term": search_term},
+    )
 
 
 # had to change auth decorator to use a class based view!
@@ -308,15 +312,15 @@ class RecipeListView(ListView):
 
 # View for displaying recipe details
 @login_required
-#@manager_required
-#@production_required
+# @manager_required
+# @production_required
 def recipe_detail(request, pk):
     recipe = get_object_or_404(Recipe, pk=pk)
     return render(request, "recipe_detail.html", {"recipe": recipe})
 
 
 @login_required
-#@manager_required
+# @manager_required
 @register_activity
 def create_recipe(request):
     if request.method == "POST":
@@ -348,11 +352,10 @@ def create_recipe(request):
     return render(request, "create_recipe.html", {"form": form, "formset": formset})
 
 
-
 # This view allows a manager to update an existing recipe.
 @login_required
-#@manager_required
-#@register_activity
+# @manager_required
+# @register_activity
 def update_recipe(request, pk):
     recipe = get_object_or_404(Recipe, pk=pk)
     if request.method == "POST":
@@ -387,8 +390,8 @@ def update_recipe(request, pk):
 
 
 @login_required
-#@manager_required
-#@register_activity
+# @manager_required
+# @register_activity
 def delete_recipe(request, pk):
     try:
         recipe = Recipe.objects.get(pk=pk)
@@ -403,8 +406,8 @@ def delete_recipe(request, pk):
 
 
 @login_required
-#@manager_required
-#@register_activity
+# @manager_required
+# @register_activity
 def create_recipe(request):
     if request.method == "POST":
         form = RecipeForm(request.POST)
@@ -438,11 +441,10 @@ def create_recipe(request):
     return render(request, "create_recipe.html", {"form": form})
 
 
-
 @login_required
-#@manager_required
-#@production_required
-#@register_activity
+# @manager_required
+# @production_required
+# @register_activity
 def production_view(request):
     if request.method == "POST":
         recipe_id = request.POST["recipe"]
@@ -451,7 +453,6 @@ def production_view(request):
         produced_by = request.user
         recipe = Recipe.objects.get(pk=recipe_id)
         recipe_ingredients = RecipeIngredient.objects.filter(recipe=recipe)
-
 
         try:
             # Check ingredient availability in inventory, and catch any ValidationErrors
@@ -482,10 +483,9 @@ def production_view(request):
     return redirect("production_view")
 
 
-
 @login_required
-#@manager_required
-#@production_required
+# @manager_required
+# @production_required
 def check_ingredient_availability(
     recipe_ingredients, quantity_produced, container_size
 ):
@@ -502,9 +502,9 @@ def check_ingredient_availability(
 
 
 @login_required
-#@manager_required
-#@production_required
-#@register_activity
+# @manager_required
+# @production_required
+# @register_activity
 def create_production(
     recipe, container_size, recipe_ingredients, quantity_produced, produced_by
 ):
@@ -542,7 +542,7 @@ def create_production(
         total_quantity_required = quantity_factor * quantity_produced
 
         # Create production
-        IceCreamProduction.objects.create( 
+        IceCreamProduction.objects.create(
             recipe=recipe,
             container_size=container_size,
             quantity_produced=quantity_produced,
@@ -555,6 +555,7 @@ def create_production(
         inventory = recipe_ingredient.ingredient.inventory
         inventory.quantity -= required_quantity
         inventory.save()
+
 
 def add_base_to_inventory(recipe, quantity_produced):
     # Create the base ingredient
@@ -589,9 +590,9 @@ def update_stock(sender, instance, created, **kwargs):
 
 
 @login_required
-#@manager_required
-#@service_required
-#@register_activity
+# @manager_required
+# @service_required
+# @register_activity
 def stock_takeout_view(request):
     if request.method == "POST":
         stock_item_id = request.POST["stock_item"]
@@ -619,9 +620,8 @@ def stock_takeout_view(request):
         return redirect("stock_takeout_view")
 
 
-
 @login_required
-#@register_activity
+# @register_activity
 def add_ingredient(request):
     if request.method == "POST":
         ingredient_name = request.POST["ingredient_name"]
@@ -709,7 +709,7 @@ def ingredient_inventory_view(request):
             form = IngredientInventoryUpdateForm(request.POST)
             if form.is_valid():
                 form.save()
-                messages.success(request, "Changes done succesfully.")
+                messages.success(request, "Changes done successfully.")
 
     # if there are mistakes in the formulary
     else:
@@ -723,13 +723,12 @@ def ingredient_inventory_view(request):
 
 
 @login_required
-#@manager_required
-#@production_required
+# @manager_required
+# @production_required
 def production_calculator_view(request):
     if request.method == "POST":
         form = ProductionCalculatorForm(request.POST)
         if form.is_valid():
-
             recipes = form.cleaned_data["recipes"]
             desired_quantities = form.cleaned_data["desired_quantities"]
 
@@ -758,7 +757,6 @@ def production_calculator_view(request):
         form = ProductionCalculatorForm()
 
     return render(request, "production_calculator.html", {"form": form})
-
 
 
 def calculate_production(recipe, desired_quantity, total_ingredient_quantities):
@@ -816,18 +814,18 @@ def check_inventory_availability(ingredient, total_quantity_needed):
         )
 
 
-#simple logout, it redirects you to login site.
+# simple logout, it redirects you to login site.
 def custom_logout(request):
     logout(request)
     return redirect("/")
 
+import cv2
 
-@register_activity(scan_journal_log)
 def scan_qr_code(request):
-    cap = cv2.VideoCapture(0)
-
     while True:
+        cap = cv2.VideoCapture(0)
         ret, frame = cap.read()
+
         decoded_objects = decode(frame)
 
         for obj in decoded_objects:
@@ -835,8 +833,6 @@ def scan_qr_code(request):
 
             try:
                 staff_member = UserProfile.objects.get(id=data)
-                cap.release()
-                cv2.destroyAllWindows()
 
                 # Check if the staff member is already clocked in
                 try:
@@ -845,16 +841,26 @@ def scan_qr_code(request):
                     ).latest("clock_in")
                     last_clock_in.clock_out = datetime.now()
                     last_clock_in.save()
-                    messages.success(request, f"Staff Member: {staff_member.username} - Clocked Out at {last_clock_in.clock_out}")#new
-                    return redirect("welcome")#new: welcome o edit_profile?
+                    messages.success(
+                        request,
+                        f"Staff Member: {staff_member.username} - Clocked Out at {last_clock_in.clock_out}",
+                    )
+                    cap.release()
+                    cv2.destroyAllWindows()
+                    return redirect("welcome")
                 except WorkingHours.DoesNotExist:
-                    # clock them in
+                    # Clock them in
                     working_hours = WorkingHours(
                         employee=staff_member, clock_in=datetime.now()
                     )
                     working_hours.save()
-                    messages.success(request, f"Staff Member: {staff_member.username} - Clocked In at {working_hours.clock_in}") #new
-                    return redirect("welcome") #new
+                    messages.success(
+                        request,
+                        f"Staff Member: {staff_member.username} - Clocked In at {working_hours.clock_in}",
+                    )
+                    cap.release()
+                    cv2.destroyAllWindows()
+                    return redirect("welcome")
 
             except UserProfile.DoesNotExist:
                 cap.release()
@@ -864,11 +870,97 @@ def scan_qr_code(request):
         cv2.imshow("QR Code Scanner", frame)
 
         if cv2.waitKey(1) & 0xFF == ord("q"):
+            cap.release()
+            cv2.destroyAllWindows()
             break
 
-    cap.release()
-    cv2.destroyAllWindows()
-    return HttpResponse("QR Code not found")
+    return redirect("welcome")
+
+
+
+# # @register_activity(scan_journal_log)
+# def scan_qr_code(request):
+#     cap = cv2.VideoCapture(0)
+
+#     while True:
+#         ret, frame = cap.read()
+#         decoded_objects = decode(frame)
+
+#         for obj in decoded_objects:
+#             data = obj.data.decode("utf-8")
+
+#             try:
+#                 staff_member = UserProfile.objects.get(id=data)
+#                 cap.release()
+#                 cv2.destroyAllWindows()
+
+#                 # Check if the staff member is already clocked in
+#                 try:
+#                     last_clock_in = WorkingHours.objects.filter(
+#                         employee=staff_member, clock_out__isnull=True
+#                     ).latest("clock_in")
+#                     last_clock_in.clock_out = datetime.now()
+#                     last_clock_in.save()
+#                     messages.success(
+#                         request,
+#                         f"Staff Member: {staff_member.username} - Clocked Out at {last_clock_in.clock_out}",
+#                     )  # new
+#                     return redirect("welcome")  # new: welcome o edit_profile?
+#                 except WorkingHours.DoesNotExist:
+#                     # clock them in
+#                     working_hours = WorkingHours(
+#                         employee=staff_member, clock_in=datetime.now()
+#                     )
+#                     working_hours.save()
+#                     messages.success(
+#                         request,
+#                         f"Staff Member: {staff_member.username} - Clocked In at {working_hours.clock_in}",
+#                     )  # new
+#                     return redirect("welcome")  # new
+
+#             except UserProfile.DoesNotExist:
+#                 cap.release()
+#                 cv2.destroyAllWindows()
+#                 return HttpResponse("Staff Member not found")
+
+#         cv2.imshow("QR Code Scanner", frame)
+
+#         if cv2.waitKey(1) & 0xFF == ord("q"):
+#             break
+
+#     cap.release()
+#     cv2.destroyAllWindows()
+#     return redirect("welcome")
+
+# def scan_qr_code(request):
+#     cap = cv2.VideoCapture(0)
+#     staff_member_id = None  # Initialize staff_member_id
+
+#     while True:
+#         ret, frame = cap.read()
+#         decoded_objects = decode(frame)
+
+#         for obj in decoded_objects:
+#             data = obj.data.decode("utf-8")
+#             staff_member_id = data  # Set staff_member_id when a QR code is detected
+
+#         # Check form validity after obtaining staff_member_id
+#         if staff_member_id:
+#             form = ClockInOutForm(initial={'staff_member_id': staff_member_id})
+#             if form.is_valid():
+#                 cap.release()
+#                 cv2.destroyAllWindows()
+#                 return render(request, 'your_template.html', {'form': form})
+
+#         cv2.imshow("QR Code Scanner", frame)
+
+#         if cv2.waitKey(1) & 0xFF == ord("q"):
+#             break
+
+#     cap.release()
+#     cv2.destroyAllWindows()
+
+#     return HttpResponse("QR Code not found")
 
 
 def staff_member_list(request):
@@ -917,4 +1009,3 @@ def working_hours_list(request, staff_member_id):
         for wh in working_hours
     ]
     return JsonResponse(data, safe=False)
-

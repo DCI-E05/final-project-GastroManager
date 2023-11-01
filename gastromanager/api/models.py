@@ -1,4 +1,3 @@
-
 from django.contrib.auth.models import AbstractUser
 from django.contrib.auth import get_user_model
 from django.conf import settings
@@ -13,7 +12,6 @@ from django.contrib.auth.models import AbstractUser
 from django.contrib.auth import get_user_model
 from django.conf import settings
 from django.db import models
-
 
 
 class Address(models.Model):
@@ -51,10 +49,8 @@ class Journal(models.Model):
     action = models.CharField(max_length=255)
     timestamp = models.DateTimeField(auto_now_add=True)
 
-
     def __str__(self):
         return f"{self.timestamp} - {self.user} - {self.action}"
-
 
 
 class EmployeeBadge(models.Model):
@@ -85,7 +81,7 @@ class EmployeeBadge(models.Model):
         logo = Image.open(logo_path)
         logo_x_axis_position = badge_center_x_axis - (logo.width // 2)
 
-        font_path = "api/fonts/arial.ttf"
+        font_path = "api/fonts/SantEliaScriptAlt-Bold.ttf"
         font = ImageFont.truetype(font_path, 20)
 
         draw.text((80, 180), self.employee_name, fill="black", font=font)
@@ -111,7 +107,6 @@ class WorkingHours(models.Model):
             return f"{time_difference.days} days {hours} hours {minutes} minutes {seconds} seconds"
         else:
             return None
-
 
 
 class Ingredient(models.Model):  # Model to represent an ingredient
@@ -164,10 +159,8 @@ class IngredientInventory(models.Model):
             inventory_entry.save()
 
 
-
- #  model represents incoming ingredients in the shop.
-class IngredientIncoming(models.Model): 
-
+#  model represents incoming ingredients in the shop.
+class IngredientIncoming(models.Model):
     GRAMS = "grams"
     UNITS = "units"
     UNIT_CHOICES = [

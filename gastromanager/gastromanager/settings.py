@@ -37,7 +37,7 @@ DEBUG = True
 
 ALLOWED_HOSTS = []
 
-AUTH_USER_MODEL = "api.UserProfile" #for using AbstractUser
+AUTH_USER_MODEL = "api.UserProfile"  # for using AbstractUser
 
 
 # Application definition
@@ -50,12 +50,11 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "api",
-
 ]
 
-LOGIN_REDIRECT_URL = 'welcome' #after log-in.
+LOGIN_REDIRECT_URL = "welcome"  # after log-in.
 
-LOGIN_URL = '' 
+LOGIN_URL = ""
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
