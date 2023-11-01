@@ -3,7 +3,6 @@ from .models import Recipe, Ingredient, UserProfile, IngredientInventory, Addres
 from django.core.exceptions import ValidationError
 
 
-
 class RecipeForm(forms.ModelForm):
     class Meta:
         model = Recipe
@@ -17,7 +16,7 @@ class RecipeForm(forms.ModelForm):
     base_ingredients = forms.ModelMultipleChoiceField(
         queryset=Ingredient.objects.all(),
         widget=forms.CheckboxSelectMultiple,
-        required=False,  # Ajusta esto según tus necesidades
+        required=False,
     )
 
     ingredient_quantities = forms.DecimalField(
@@ -27,7 +26,6 @@ class RecipeForm(forms.ModelForm):
         ),
         required=False,
     )
-
 
     new_ingredient_name = forms.CharField(
         max_length=255,
@@ -53,13 +51,12 @@ class ProductionCalculatorForm(forms.Form):
     )
 
 
-
 class CustomUserForm(forms.ModelForm):
     password = forms.CharField(
         label="Password",
         widget=forms.PasswordInput,
         required=True,
-        help_text="Enter password, can be anything."
+        help_text="Enter password, can be anything.",
     )
 
     # Define the Address fields within the CustomUserForm
@@ -92,12 +89,12 @@ class CustomUserForm(forms.ModelForm):
 
         # Save the Address data
         address = Address(
-            line_1=self.cleaned_data.get('line_1'),
-            line_2=self.cleaned_data.get('line_2'),
-            city=self.cleaned_data.get('city'),
-            state=self.cleaned_data.get('state'),
-            postal_code=self.cleaned_data.get('postal_code'),
-            country=self.cleaned_data.get('country')
+            line_1=self.cleaned_data.get("line_1"),
+            line_2=self.cleaned_data.get("line_2"),
+            city=self.cleaned_data.get("city"),
+            state=self.cleaned_data.get("state"),
+            postal_code=self.cleaned_data.get("postal_code"),
+            country=self.cleaned_data.get("country"),
         )
         address.save()
 
@@ -109,8 +106,8 @@ class CustomUserForm(forms.ModelForm):
 
         return user
 
-class CustomUserNormalForm(forms.ModelForm):  # for all users
 
+class CustomUserNormalForm(forms.ModelForm):  # for all users
     # Address defined directly in CustomUserForm.
     line_1 = forms.CharField(max_length=255, label="Address Line 1")
     line_2 = forms.CharField(max_length=255, label="Address Line 2", required=False)
@@ -126,7 +123,7 @@ class CustomUserNormalForm(forms.ModelForm):  # for all users
             "last_name",
             "email",
             "date_of_birth",
-            "line_1", 
+            "line_1",
             "line_2",
             "city",
             "state",
@@ -136,18 +133,18 @@ class CustomUserNormalForm(forms.ModelForm):  # for all users
         )
 
     def save(self, commit=True):
-        # Save an "Adress Form" in an instance of Address
+        # Save an "Address Form" in an instance of Address
         address = Address(
-            line_1=self.cleaned_data.get('line_1'),
-            line_2=self.cleaned_data.get('line_2'),
-            city=self.cleaned_data.get('city'),
-            state=self.cleaned_data.get('state'),
-            postal_code=self.cleaned_data.get('postal_code'),
-            country=self.cleaned_data.get('country')
+            line_1=self.cleaned_data.get("line_1"),
+            line_2=self.cleaned_data.get("line_2"),
+            city=self.cleaned_data.get("city"),
+            state=self.cleaned_data.get("state"),
+            postal_code=self.cleaned_data.get("postal_code"),
+            country=self.cleaned_data.get("country"),
         )
         address.save()
 
-        # Save User and assigne new Address
+        # Save User and assign new Address
         user = super().save(commit=False)
         user.address = address
 
@@ -169,3 +166,6 @@ class IngredientInventoryUpdateForm(forms.ModelForm):
             raise ValidationError("Quantity must be a positive number.")
         return quantity
 
+class ClockInOutForm(forms.Form):
+    clock_in = forms.BooleanField(widget=forms.HiddenInput, required=False)
+    clock_out = forms.BooleanField(widget=forms.HiddenInput, required=False)

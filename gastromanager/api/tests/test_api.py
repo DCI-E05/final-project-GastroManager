@@ -38,7 +38,6 @@ from api.models import (
 # fixture: These fixtures ensure that the test cases have consistent and controlled data to work with, improving the reliability of the tests.
 
 
-
 @pytest.fixture
 def test_create_ingredient():
     return Ingredient.objects.create(name="Chocolate", unit_of_measurement="grams")
@@ -403,7 +402,6 @@ def test_insufficient_stock_takeout(create_stock_item, create_user, client):
     # This test checks that attempting to take more stock quantity than what is available raises a validation error.
 
 
-
 class EmployeeBadgeTest(TestCase):
     def test_generate_badge(self):
         employee = EmployeeBadge(employee_name="John Doe", employee_id=12345)
@@ -451,4 +449,3 @@ class WorkingHoursTest(TestCase):
         )
 
         self.assertIsNone(working_hours.recorded_time())
-

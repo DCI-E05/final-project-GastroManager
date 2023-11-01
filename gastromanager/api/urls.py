@@ -5,7 +5,6 @@ from . import views
 """app_name = "api" """
 
 urlpatterns = [
-
     path("welcome/", views.welcome_page, name="welcome"),
     path("staff/", views.staff_view, name="staff_view"),
     path("stock/", views.stock_view, name="stock_view"),
@@ -23,7 +22,6 @@ urlpatterns = [
         views.production_calculator_view,
         name="production_calculator",
     ),
-
     path("edit-profile/<int:user_id>", views.edit_profile, name="edit_profile"),
     path(
         "ingredient-inventory/",
@@ -31,9 +29,7 @@ urlpatterns = [
         name="ingredient_inventory",
     ),
     path("logout/", views.custom_logout, name="custom_logout"),
-    path('profile/<int:user_id>/', views.view_profile, name='view_profile'),
-
-
+    path("profile/<int:user_id>/", views.view_profile, name="view_profile"),
     path("staff_members/", views.staff_member_list, name="staff_member_list"),
     # TODO: working_hours_list dose not exists
     # path(
@@ -48,5 +44,4 @@ urlpatterns = [
         views.working_hours_list,
         name="working_hours_list",
     ),
-
 ]

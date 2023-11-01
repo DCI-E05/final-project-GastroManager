@@ -7,12 +7,7 @@ def manager_required(view_func):
     @wraps(view_func)
     def _wrapped_view(request, *args, **kwargs):
         # Check if the user's level is "Manager"
-        if (
-            request.user.is_authenticated
-
-            and request.user.level == "Manager"
-
-        ):
+        if request.user.is_authenticated and request.user.level == "Manager":
             return view_func(request, *args, **kwargs)
         else:
             return HttpResponseForbidden("No access")
@@ -24,12 +19,7 @@ def service_required(view_func):
     @wraps(view_func)
     def _wrapped_view(request, *args, **kwargs):
         # Check if the user's level is "Service"
-        if (
-            request.user.is_authenticated
-
-            and request.user.level == "Service"
-
-        ):
+        if request.user.is_authenticated and request.user.level == "Service":
             return view_func(request, *args, **kwargs)
         else:
             return HttpResponseForbidden("No access")
@@ -41,12 +31,7 @@ def production_required(view_func):
     @wraps(view_func)
     def _wrapped_view(request, *args, **kwargs):
         # Check if the user's level is "Production"
-        if (
-            request.user.is_authenticated
-
-            and request.user.level == "Production"
-
-        ):
+        if request.user.is_authenticated and request.user.level == "Production":
             return view_func(request, *args, **kwargs)
         else:
             return HttpResponseForbidden("No access")
@@ -54,7 +39,7 @@ def production_required(view_func):
     return _wrapped_view
 
 
-#DONT TOUCH!
+# DONT TOUCH!
 def register_activity(action_func):
     def decorator(view_func):
         @wraps(view_func)
@@ -68,7 +53,10 @@ def register_activity(action_func):
                     # Register the action in the "Journal" model
                     Journal.objects.create(user=request.user, action=action_description)
             return response  # Return the response obtained from running the view
-        return _wrapped_view
-    return decorator
-#DONT TOUCH
 
+        return _wrapped_view
+
+    return decorator
+
+
+# DONT TOUCH

@@ -3,8 +3,6 @@ from django.dispatch import receiver
 from .models import IceCreamProduction, StockItem
 
 
-
-
 """@receiver(post_save, sender=IngredientIncoming)
 def update_inventory(sender, instance, created, **kwargs):
     if created:
@@ -12,7 +10,6 @@ def update_inventory(sender, instance, created, **kwargs):
         IngredientInventory.update_or_create_inventory(
             instance.ingredient, instance.quantity
         )"""
-
 
 
 @receiver(post_save, sender=IceCreamProduction)
