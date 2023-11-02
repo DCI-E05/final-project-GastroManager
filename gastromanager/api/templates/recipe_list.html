@@ -19,6 +19,8 @@
   {% endif %}
   {% if request.user.level == "Manager" %}
     <a href="{% url 'create_recipe' %}" class="btn btn-primary">Create New Recipe</a>
+    <br>
+    <br>
     <p>You have Manager permissions to create and delete recipes.</p>
   {% else %}
     <p>You need Manager permissions to create and delete recipes.</p>

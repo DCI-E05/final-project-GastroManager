@@ -18,10 +18,17 @@
                 <ul class="list-group centered-list">
                     {% for option, url_name in user_options.items %}
                         <li class="list-group-item">
-                            <a href="{% url url_name %}" class="btn btn-primary btn-lg">{{ option }}</a>
+                            {% if option == "Clock in/out" %}
+                                <form action="{% url url_name %}" method="post">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-primary btn-lg">{{ option }}</button>
+                                </form>
+                            {% else %}
+                                <a href="{% url url_name %}" class="btn btn-primary btn-lg">{{ option }}</a>
+                            {% endif %}
                         </li>
                     {% endfor %}
-                </ul>
+                </ul>                
             </div>
         </div>
     </div>

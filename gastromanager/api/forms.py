@@ -166,6 +166,7 @@ class IngredientInventoryUpdateForm(forms.ModelForm):
             raise ValidationError("Quantity must be a positive number.")
         return quantity
 
+
 class ClockInOutForm(forms.Form):
     clock_in = forms.BooleanField(widget=forms.HiddenInput, required=False)
     clock_out = forms.BooleanField(widget=forms.HiddenInput, required=False)

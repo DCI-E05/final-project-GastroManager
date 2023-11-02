@@ -77,7 +77,7 @@ from .models import (
     EmployeeBadge,
     WorkingHours,
 )
-from .forms import RecipeForm, ProductionCalculatorForm
+from .forms import RecipeForm, ProductionCalculatorForm, ClockInOutForm
 from .decorators import (
     manager_required,
     service_required,
@@ -819,65 +819,76 @@ def custom_logout(request):
     logout(request)
     return redirect("/")
 
-import cv2
 
-
-
-
-# @register_activity(scan_journal_log)
+# combined version
 def scan_qr_code(request):
-    cap = cv2.VideoCapture(0)
+    if request.method == "POST":
+        form = ClockInOutForm(request.POST)
 
-    while True:
-        ret, frame = cap.read()
-        decoded_objects = decode(frame)
+        if form.is_valid():
+            cap = cv2.VideoCapture(0)
 
-        for obj in decoded_objects:
-            data = obj.data.decode("utf-8")
+            while True:
+                ret, frame = cap.read()
+                decoded_objects = decode(frame)
 
-            try:
-                staff_member = UserProfile.objects.get(id=data)
-                cap.release()
-                cv2.destroyAllWindows()
+                for obj in decoded_objects:
+                    data = obj.data.decode("utf-8")
 
-                # Check if the staff member is already clocked in
-                try:
-                    last_clock_in = WorkingHours.objects.filter(
-                        employee=staff_member, clock_out__isnull=True
-                    ).latest("clock_in")
-                    last_clock_in.clock_out = datetime.now()
-                    last_clock_in.save()
-                    messages.success(
-                        request,
-                        f"Staff Member: {staff_member.username} - Clocked Out at {last_clock_in.clock_out}",
-                    )  # new
-                    return redirect("welcome")  # new: welcome o edit_profile?
-                except WorkingHours.DoesNotExist:
-                    # clock them in
-                    working_hours = WorkingHours(
-                        employee=staff_member, clock_in=datetime.now()
-                    )
-                    working_hours.save()
-                    messages.success(
-                        request,
-                        f"Staff Member: {staff_member.username} - Clocked In at {working_hours.clock_in}",
-                    )  # new
-                    return redirect("welcome")  # new
+                    try:
+                        staff_member = UserProfile.objects.get(id=data)
+                        cv2.destroyAllWindows()
 
-            except UserProfile.DoesNotExist:
-                cap.release()
-                cv2.destroyAllWindows()
-                return redirect("welcome")
+                        # Check if the staff member is already clocked in
+                        try:
+                            last_clock_in = WorkingHours.objects.filter(
+                                employee=staff_member, clock_out__isnull=True
+                            ).latest("clock_in")
+                            last_clock_in.clock_out = datetime.now()
+                            last_clock_in.save()
+                            clock_out_formatted = last_clock_in.clock_out.strftime(
+                                "%Y-%m-%d %H:%M"
+                            )
+                            messages.success(
+                                request,
+                                f"{staff_member.username} - Clocked Out at {clock_out_formatted}",
+                            )
+                            return redirect("welcome")
 
-        cv2.imshow("QR Code Scanner", frame)
+                        except WorkingHours.DoesNotExist:
+                            # Clock staff member in
+                            working_hours = WorkingHours(
+                                employee=staff_member, clock_in=datetime.now()
+                            )
+                            working_hours.save()
+                            clock_in_formatted = working_hours.clock_in.strftime(
+                                "%Y-%m-%d %H:%M"
+                            )
+                            messages.success(
+                                request,
+                                f"{staff_member.username} - Clocked In at {clock_in_formatted}",
+                            )
+                            return redirect("welcome")
 
-        if cv2.waitKey(1) & 0xFF == ord("q"):
-            break
+                    except UserProfile.DoesNotExist:
+                        cap.release()
+                        cv2.destroyAllWindows()
+                        return redirect("welcome")
 
-    cap.release()
-    cv2.destroyAllWindows()
-    return redirect("welcome")
+                cv2.imshow("QR Code Scanner    Press q to exit", frame)
 
+                if cv2.waitKey(1) & 0xFF == ord("q"):
+                    break
+
+            cap.release()
+            cv2.destroyAllWindows()
+            return redirect("welcome")
+        else:
+            return redirect("welcome")
+    else:
+        form = ClockInOutForm()
+
+    return render(request, "welcome.html", {"form": form})
 
 
 def staff_member_list(request):

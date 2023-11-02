@@ -10,10 +10,11 @@
     crossorigin="anonymous"
   />
   <style>
-    @font-face {
+    /* the font-face dose not work and causes an error that stops the scan qr_code view working properly */
+    /* @font-face {
       font-family: 'MyFont';
       src: url('/static/fonts/SantEliaScriptAlt-Bold.ttf') format('truetype');
-    }
+    } */
 
     body {
       background-color: #FFFDF0; /* Ivory */
@@ -49,7 +50,7 @@
     <div class="container">
       <div class="row">
         <div class="col text-left">
-          <a href="{% url 'welcome' %}">Options</a>
+          <a href="{% url 'welcome' %}">Home</a>
         </div>
         <div class="col text-right">
           <a href="{% url 'custom_logout' %}">Logout</a>

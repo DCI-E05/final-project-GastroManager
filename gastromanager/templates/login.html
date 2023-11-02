@@ -8,7 +8,7 @@
           <h2 class="text-center">Green Scoop</h2>
         </div>
         <div class="card-body">
-          <form method="post">
+          <form method="post" class="text-center">
             {% csrf_token %}
             <div class="form-group">
               <label for="{{ form.username.id_for_label }}">Username</label>
@@ -18,7 +18,7 @@
               <label for="{{ form.password.id_for_label }}">Password</label>
               {{ form.password }}
             </div>
-            <button type="submit" class="btn btn-success btn-block" style="background-color: #02796e;">Login</button>
+            <button type="submit" class="btn btn-success mx-auto" style="background-color: #02796e;">Login</button>
           </form>
         </div>
       </div>
